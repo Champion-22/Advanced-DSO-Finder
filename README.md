@@ -1,79 +1,79 @@
 # Advanced DSO Finder 🔭
 
-Ein interaktives Web-Tool für Amateurastronomen zur Planung von Deep-Sky-Beobachtungen, ursprünglich inspiriert durch das Vespera Pro Teleskop, aber generell nützlich.
+An interactive web tool for amateur astronomers to plan Deep Sky observations, originally inspired by the Vespera Pro telescope but generally useful.
 
-Diese mit Streamlit erstellte Anwendung hilft dabei, Deep-Sky-Objekte (DSOs) zu finden, die von einem bestimmten Standort zu einer gewählten Zeit unter Berücksichtigung der Himmelsqualität und anderer Faktoren beobachtbar sind.
-
----
-
-## ✨ Hauptfunktionen
-
-* **Standortwahl:** Standardstandort (Schötz, CH) oder manuelle Eingabe von Längen-, Breitengrad und Höhe.
-* **Zeitpunktwahl:** Planung für die kommende Nacht (basierend auf aktueller Zeit) oder Auswahl eines beliebigen Datums.
-* **Helligkeitsfilter:**
-    * Automatisch basierend auf der Bortle-Skala (1-9).
-    * Oder manuelle Eingabe eines Magnitude-Bereichs (Min/Max).
-* **Mindesthöhe:** Einstellbare minimale Höhe über dem Horizont, die Objekte erreichen müssen.
-* **Objekttyp-Filter:** Auswahl spezifischer DSO-Typen (z.B. Galaxie, Nebel, Sternhaufen).
-* **Mondphasen-Anzeige & Warnung:** Zeigt die aktuelle Mondhelligkeit an und warnt (in Rot), wenn ein einstellbarer Schwellenwert überschritten wird.
-* **Ergebnis-Optionen:**
-    * Einstellbare Anzahl der anzuzeigenden Objekte.
-    * Optionale Sortierung nach Helligkeit (hellste zuerst) statt zufälliger Auswahl.
-* **Detailansicht:** Ausklappbare Detailinformationen für jedes Objekt (Koordinaten, max. Höhe, beste Beobachtungszeit).
-* **Höhenverlauf-Plot:** Möglichkeit, für jedes Ergebnisobjekt einen Graphen des Höhenverlaufs über die Nacht anzuzeigen (benötigt Matplotlib).
-* **CSV-Export:** Herunterladen der Ergebnisliste als CSV-Datei.
+This application, built with Streamlit, helps find Deep Sky Objects (DSOs) observable from a specific location at a chosen time, considering sky quality and other factors.
 
 ---
 
-## 🚀 App starten (Lokal)
+## ✨ Key Features
 
-Um die App auf deinem eigenen Computer auszuführen:
+* **Location Selection:** Default location (Schötz, Switzerland) or manual input of longitude, latitude, and altitude.
+* **Time Selection:** Plan for the upcoming night (based on current time) or select any date.
+* **Brightness Filter:**
+    * Automatically based on the Bortle scale (1-9).
+    * Or manual input of a magnitude range (Min/Max).
+* **Minimum Altitude:** Adjustable minimum height above the horizon that objects must reach.
+* **Object Type Filter:** Selection of specific DSO types (e.g., Galaxy, Nebula, Star Cluster).
+* **Moon Phase Display & Warning:** Shows the current moon illumination and warns (in red) if an adjustable threshold is exceeded.
+* **Result Options:**
+    * Adjustable number of objects to display.
+    * Optional sorting by brightness (brightest first) instead of random selection.
+* **Detail View:** Expandable detailed information for each object (coordinates, max altitude, best observation time).
+* **Altitude Plot:** Option to display an altitude graph over the night for each result object (requires Matplotlib).
+* **CSV Export:** Download the results list as a CSV file.
 
-1.  **Repository klonen:**
+---
+
+## 🚀 Run App (Locally)
+
+To run the app on your own computer:
+
+1.  **Clone the Repository:**
     ```bash
-    # Ersetze DEIN_USERNAME und DEIN_REPO_NAME mit deinen Angaben
-    git clone [https://github.com/DEIN_USERNAME/DEIN_REPO_NAME.git](https://github.com/DEIN_USERNAME/DEIN_REPO_NAME.git)
-    cd DEIN_REPO_NAME
+    # Replace YOUR_USERNAME and YOUR_REPO_NAME with your details
+    git clone [https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git](https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git)
+    cd YOUR_REPO_NAME
     ```
 
-2.  **Virtuelle Umgebung erstellen & aktivieren:**
+2.  **Create & Activate Virtual Environment:**
     ```bash
-    # Erstellen (nur einmal nötig)
+    # Create (only needed once)
     python -m venv .venv
 
-    # Aktivieren (Windows PowerShell)
+    # Activate (Windows PowerShell)
     .\.venv\Scripts\Activate.ps1
 
-    # Aktivieren (MacOS/Linux Bash)
+    # Activate (MacOS/Linux Bash)
     source .venv/bin/activate
     ```
-    *Hinweis: Verwende den für dein Betriebssystem und deine Shell passenden Aktivierungsbefehl.*
+    *Note: Use the activation command appropriate for your operating system and shell.*
 
-3.  **Abhängigkeiten installieren:**
+3.  **Install Dependencies:**
     ```bash
     pip install -r requirements.txt
     ```
-    *(Stelle sicher, dass die `requirements.txt`-Datei aktuell ist, siehe Anleitung zum Deployment)*
+    *(Ensure the `requirements.txt` file is up-to-date, see deployment instructions)*
 
-4.  **Streamlit App starten:**
+4.  **Start Streamlit App:**
     ```bash
-    # Ersetze DeineAppDatei.py mit dem Namen deines Python-Skripts, z.B. dso_app_v14.py
-    streamlit run DeineAppDatei.py
+    # Replace YourAppFile.py with the name of your Python script, e.g., dso_app_v14.py
+    streamlit run YourAppFile.py
     ```
 
-Die App sollte sich nun in deinem Webbrowser öffnen.
+The app should now open in your web browser.
 
 ---
 
-## 🌐 Live-Version
+## 🌐 Live Version
 
-Eine Live-Version dieser App findest du hier: `https://advanced-dso-finder-22.streamlit.app`
+A live version of this app can be found here: `https://advanced-dso-finder-22.streamlit.app`
 
 ---
 
-## 📚 Abhängigkeiten
+## 📚 Dependencies
 
-Die Hauptbibliotheken, die von dieser Anwendung verwendet werden:
+The main libraries used by this application:
 
 * Streamlit
 * Astropy
@@ -82,14 +82,16 @@ Die Hauptbibliotheken, die von dieser Anwendung verwendet werden:
 * Pandas
 * Matplotlib
 
-Die genauen Versionen sind in der `requirements.txt`-Datei aufgeführt.
+The exact versions are listed in the `requirements.txt` file.
 
 ---
 
-## Lizenz
+## License
+
+No license specified.
 
 ---
 
-## Kontakt
+## Contact
 
 Email: debrun2005@gmail.com
