@@ -95,3 +95,10 @@ No license specified.
 ## Contact
 
 Email: debrun2005@gmail.com
+
+---
+
+## Support
+
+If you find this project helpful, consider supporting me via PayPal: https://www.paypal.com/ncp/payment/3NW2DLWYMSSJ4 
+Thank you!
