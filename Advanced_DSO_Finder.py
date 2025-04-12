@@ -19,7 +19,7 @@ except ImportError as e:
 try:
     import numpy as np
     import astropy.units as u
-    from astropy import coordinates
+    # KORREKTUR (V16): get_moon aus folgendem Import entfernt, da nicht benötigt.
     from astropy.coordinates import EarthLocation, SkyCoord, get_sun, AltAz
     from astroplan.moon import moon_illumination
 except ImportError as e:
@@ -179,6 +179,8 @@ def find_observable_objects(
         except Exception as e: st.warning(f"Fehler bei {name}: {e}")
     return observable_objects
 
+# Monddistanz-Funktion wurde entfernt
+
 def create_moon_phase_svg(illumination_fraction: float, size: int = 80) -> str:
     percentage = illumination_fraction * 100
     radius = size // 2 - 6; cx = cy = size // 2
@@ -201,14 +203,14 @@ def plot_altitude(obj_data: dict, location: EarthLocation):
             xlabel = f"Zeit ({local_tz.tzname(datetime.now()) if local_tz else 'Lokal'})"
         except Exception:
             local_tz = None; times_local = times.datetime; xlabel = "Zeit (UTC)"
-        ax.plot(times_local, obj_data['altitudes'], label='Höhe', color='#00C0F0') # Helleres Blau
-        ax.axhline(obj_data['min_alt_limit'], color='#FF4040', linestyle='--', label=f'Mindesthöhe ({obj_data["min_alt_limit"]}°)') # Helleres Rot
+        ax.plot(times_local, obj_data['altitudes'], label='Höhe', color='#00C0F0')
+        ax.axhline(obj_data['min_alt_limit'], color='#FF4040', linestyle='--', label=f'Mindesthöhe ({obj_data["min_alt_limit"]}°)')
         ax.set_ylim(0, 90)
         ax.set_xlabel(xlabel)
         ax.set_ylabel("Höhe (°)")
         ax.set_title(f"Höhenverlauf für {obj_data['name']}")
         ax.legend()
-        ax.grid(True, linestyle=':', linewidth=0.5, color='#555555') # Dezentes Grid
+        ax.grid(True, linestyle=':', linewidth=0.5, color='#555555')
         plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
         plt.tight_layout()
     except Exception as e:
@@ -284,7 +286,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- Titel ---
-st.title("✨ Advanced DSO Finder ✨") # Titel geändert
+st.title("✨ Advanced DSO Finder ✨")
 
 # --- Session State Initialisierung ---
 if 'plot_object_name' not in st.session_state: st.session_state.plot_object_name = None
@@ -294,8 +296,7 @@ if 'last_results' not in st.session_state: st.session_state.last_results = []
 # --- Seitenleiste für Eingaben (mit Expandern) ---
 with st.sidebar:
     st.header("Einstellungen")
-
-    with st.expander("📍 Standort", expanded=True): # Standort standardmässig aufgeklappt
+    with st.expander("📍 Standort", expanded=True):
         location_choice = st.radio("Standort wählen", (f"Standard ({DEFAULT_LOCATION_NAME})", "Manuell eingeben"), key="location_choice_exp")
         current_location = DEFAULT_LOCATION
         location_display_name = DEFAULT_LOCATION_NAME
@@ -309,7 +310,6 @@ with st.sidebar:
             except Exception as e:
                 st.error(f"Fehler Standort: {e}")
                 location_display_name = f"FEHLER - Nutze Standard"
-
     with st.expander("⏱️ Zeitpunkt"):
         time_choice = st.radio("Zeitpunkt wählen", ("Jetzt (kommende Nacht)", "Andere Nacht"), key="time_choice_exp")
         is_time_now = (time_choice == "Jetzt (kommende Nacht)")
@@ -317,9 +317,7 @@ with st.sidebar:
         if not is_time_now:
             selected_date = st.date_input("Datum auswählen:", date.today(), min_value=date.today()-timedelta(days=365*5), max_value=date.today()+timedelta(days=365*1))
             reference_time = Time(datetime.combine(selected_date, time(12, 0)))
-
-    with st.expander("✨ Filter & Bedingungen", expanded=True): # Filter standardmässig aufgeklappt
-        # Helligkeitsfilter
+    with st.expander("✨ Filter & Bedingungen", expanded=True):
         st.markdown("**Helligkeitsfilter**")
         magnitude_filter_mode = st.radio("Filtermethode:", ("Bortle-Skala", "Manuell"), key="mag_filter_mode_exp", horizontal=True)
         bortle = 5; manual_min_mag = 0.0; manual_max_mag = 16.0
@@ -329,27 +327,20 @@ with st.sidebar:
             manual_min_mag = st.slider("Min. Magnitude:", 0.0, 20.0, 0.0, 0.5, format="%.1f", help="Hellstes Objekt")
             manual_max_mag = st.slider("Max. Magnitude:", 0.0, 20.0, 16.0, 0.5, format="%.1f", help="Schwächstes Objekt")
             if manual_min_mag > manual_max_mag: st.warning("Min > Max!")
-        st.markdown("---") # Trennlinie
-
-        # Mindesthöhe
+        st.markdown("---")
         st.markdown("**Mindesthöhe**")
         min_altitude_deg = st.slider("Min. Objekt-Höhe (°):", 5, 45, 20, 1)
         min_altitude_limit = min_altitude_deg * u.deg
         st.markdown("---")
-
-        # Mond Warnung
         st.markdown("**Mond Warnung**")
         moon_phase_threshold = st.slider("Warnen wenn Mond > (%):", 0, 100, 35, 5)
         st.markdown("---")
-
-        # Objekttypen
         st.markdown("**Objekttypen**")
         try: all_types = sorted(list(set(item[4] for item in DSO_CATALOG)))
         except IndexError: all_types = []
         if not all_types: st.warning("Typen nicht extrahierbar.")
         selected_object_types = st.multiselect("Typen (leer = alle):", all_types, default=all_types, key="object_type_filter_exp")
         if not selected_object_types: selected_object_types = all_types
-
     with st.expander("⚙️ Ergebnis-Optionen"):
         num_objects_to_suggest = st.slider("Anzahl Objekte:", 5, 50, 20, 1)
         sort_by_brightness = st.checkbox("Nach Helligkeit sortieren", value=False)
@@ -360,7 +351,7 @@ with st.sidebar:
 try:
     current_moon_illumination = moon_illumination(reference_time)
     moon_percentage = current_moon_illumination * 100
-    moon_col1, moon_col2 = st.columns([1, 4]) # Spalten angepasst
+    moon_col1, moon_col2 = st.columns([1, 4])
     with moon_col1: st.markdown(create_moon_phase_svg(current_moon_illumination, size=80), unsafe_allow_html=True)
     with moon_col2:
         st.metric(label="Mondhelligkeit (ca.)", value=f"{moon_percentage:.0f}%")
@@ -370,11 +361,9 @@ except Exception as e: st.error(f"Mondphasen-Fehler: {e}")
 st.markdown("---")
 
 # Such-Button
-if st.button("🔭 Beobachtbare Objekte finden", key="find_button"): # Emoji hinzugefügt
+if st.button("🔭 Beobachtbare Objekte finden", key="find_button"):
     st.session_state.last_results = []
-
-    # --- Suchparameter anzeigen ---
-    with st.container():
+    with st.container(): # Container für Suchparameter
         st.subheader("Suchparameter")
         col1, col2 = st.columns(2)
         with col1:
@@ -386,14 +375,13 @@ if st.button("🔭 Beobachtbare Objekte finden", key="find_button"): # Emoji hin
             st.info(f"✨ Filter: {mag_info}")
             st.info(f"🔭 Filter: Min. Höhe {min_altitude_deg}°, Typen: {', '.join(selected_object_types) if selected_object_types != all_types else 'Alle'}")
 
-    # --- Objekte suchen & Fenster berechnen ---
+    # Objekte suchen & Fenster berechnen
     selected_objects = []
     all_found_objects = []
     try:
         with st.spinner('Berechne Fenster & suche Objekte...'):
             start_time, end_time, window_msg = get_observable_window(current_location, reference_time, is_time_now)
             if window_msg: st.info(window_msg.replace("\n", "\n\n"))
-
             if start_time and end_time and start_time < end_time:
                 observing_times = Time(np.linspace(start_time.jd, end_time.jd, max(20, int((end_time - start_time).to(u.hour).value * 12))), format='jd')
                 all_found_objects = find_observable_objects(
@@ -422,7 +410,6 @@ if st.button("🔭 Beobachtbare Objekte finden", key="find_button"): # Emoji hin
                     st.write(f"Liste der {len(selected_objects)} Objekte:")
             st.session_state.last_results = selected_objects
         else: st.session_state.last_results = []
-
     except Exception as main_e:
         st.error("Unerwarteter Fehler während der Suche:")
         st.exception(main_e)
@@ -445,27 +432,28 @@ if st.session_state.last_results:
 
         expander_title = f"{obj['name']} ({obj['type']}) - Mag: {obj['magnitude']:.1f}"
         with st.expander(expander_title):
-            # Verbesserte Detailansicht mit 3 Spalten
-            col1, col2, col3 = st.columns(3)
+            col1, col2, col3 = st.columns(3) # 3 Spalten für Details
             with col1:
                 st.markdown(f"**Koordinaten:**")
-                st.markdown(f"&nbsp;RA: {obj['ra']}")
-                st.markdown(f"&nbsp;Dec: {obj['dec']}")
+                st.markdown(f"RA: {obj['ra']}")
+                st.markdown(f"Dec: {obj['dec']}")
             with col2:
                 st.markdown(f"**Max. Höhe:**")
-                st.markdown(f"&nbsp;{obj['peak_alt']:.1f}° bei {obj['peak_az']:.1f}° Azimut")
+                st.markdown(f"{obj['peak_alt']:.1f}°")
+                st.markdown(f"(Azimut: {obj['peak_az']:.1f}°)")
             with col3:
                 st.markdown(f"**Beste Zeit (Lokal):**")
-                st.markdown(f"&nbsp;**{peak_time_local_str} {tz_name}**")
+                st.markdown(f"**{peak_time_local_str}**")
+                st.markdown(f"({tz_name})")
 
             st.markdown("---") # Trenner vor Plot Button
 
             # Plot Button Logik
             plot_key = f"plot_btn_{obj['name']}_{i}"
-            if st.button("📈 Höhenverlauf", key=plot_key): # Emoji hinzugefügt
+            if st.button("📈 Höhenverlauf", key=plot_key):
                 st.session_state.plot_object_name = obj['name']
                 st.session_state.show_plot = True
-                st.experimental_rerun()
+                st.rerun() # KORREKTUR: Verwende st.rerun()
 
             if st.session_state.show_plot and st.session_state.plot_object_name == obj['name']:
                 with st.spinner("Erstelle Plot..."):
@@ -477,7 +465,7 @@ if st.session_state.last_results:
                         if st.button("Plot schliessen", key=close_key):
                            st.session_state.show_plot = False
                            st.session_state.plot_object_name = None
-                           st.experimental_rerun()
+                           st.rerun() # KORREKTUR: Verwende st.rerun()
                     except Exception as plot_e:
                         st.error(f"Plot Fehler: {plot_e}")
                         st.session_state.show_plot = False
@@ -490,7 +478,7 @@ if st.session_state.last_results:
             df = pd.DataFrame(export_data)
             csv_buffer = io.StringIO()
             df.to_csv(csv_buffer, index=False, sep=';', encoding='utf-8-sig')
-            st.download_button("💾 Ergebnisliste als CSV speichern", csv_buffer.getvalue(), # Emoji hinzugefügt
+            st.download_button("💾 Ergebnisliste als CSV speichern", csv_buffer.getvalue(),
                                f"dso_beobachtungsliste_{reference_time.datetime.date()}.csv", "text/csv")
         except Exception as csv_e: st.error(f"CSV Export Fehler: {csv_e}")
 
