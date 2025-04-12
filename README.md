@@ -67,7 +67,7 @@ Die App sollte sich nun in deinem Webbrowser öffnen.
 
 ## 🌐 Live-Version
 
-Eine Live-Version dieser App findest du hier: `[Link zur Live-App einfügen]`
+Eine Live-Version dieser App findest du hier: `https://advanced-dso-finder-22.streamlit.app`
 
 ---
 
