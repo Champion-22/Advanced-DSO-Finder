@@ -8,6 +8,7 @@ import math
 import io
 import traceback
 import locale # Optional for locale-specific formatting
+import os # Needed for file path joining
 
 # --- Page Config (MUST BE FIRST Streamlit command after st import) ---
 st.set_page_config(page_title="Advanced DSO Finder", layout="wide")
@@ -117,6 +118,9 @@ translations = {
         'mag_filter_warning_min_max': "Min. magnitude is greater than Max. magnitude!",
         'min_alt_header': "**Minimum Altitude**",
         'min_alt_label': "Min. Object Altitude (°):",
+        'direction_filter_header': "**Peak Direction Filter**",
+        'direction_filter_label': "Show objects peaking in direction:",
+        'direction_option_all': "All",
         'moon_warning_header': "**Moon Warning**",
         'moon_warning_label': "Warn if Moon > (% Illumination):",
         'object_types_header': "**Object Types**",
@@ -124,7 +128,9 @@ translations = {
         'object_types_label': "Filter Types (leave empty for all):",
         'results_options_expander': "⚙️ Result Options",
         'results_options_max_objects_label': "Max Number of Objects to Display:",
-        'results_options_sort_brightness_label': "Sort by Brightness (Brightest First)",
+        'results_options_sort_method_label': "Sort Results By:",
+        'results_options_sort_duration': "Duration & Altitude",
+        'results_options_sort_magnitude': "Brightness",
         'moon_metric_label': "Moon Illumination (approx.)",
         'moon_warning_message': "Warning: Moon is brighter ({:.0f}%) than threshold ({:.0f}%)!",
         'moon_phase_error': "Moon phase calculation error: {}",
@@ -138,15 +144,16 @@ translations = {
         'search_params_filter_mag': "✨ Filter: {}",
         'search_params_filter_mag_bortle': "Bortle {} (<= {:.1f} mag)",
         'search_params_filter_mag_manual': "Manual ({:.1f}-{:.1f} mag)",
-        'search_params_filter_alt_types': "🔭 Filter: Min. Altitude {}°, Types: {}",
+        'search_params_filter_alt_types': "🔭 Filter: Min. Alt {}°, Types: {}",
+        'search_params_filter_direction': "🧭 Filter: Peak Direction: {}",
         'search_params_types_all': "All",
+        'search_params_direction_all': "All",
         'spinner_searching': "Calculating window & searching objects...",
         'window_info_template': "{}",
         'error_no_window': "No valid observation window found.",
         'success_objects_found': "{} matching objects found.",
-        'info_showing_brightest': "Showing the {} brightest:",
-        'info_showing_random': "Random selection of {}:",
-        'info_showing_list': "List of the {} objects:",
+        'info_showing_list_duration': "Showing {} objects, sorted by visibility duration and peak altitude:",
+        'info_showing_list_magnitude': "Showing {} objects, sorted by brightness (brightest first):",
         'error_search_unexpected': "An unexpected error occurred during the search:",
         'results_list_header': "Result List",
         'results_export_name': "Name",
@@ -156,13 +163,18 @@ translations = {
         'results_export_dec': "Dec",
         'results_export_max_alt': "Max Altitude (°)",
         'results_export_az_at_max': "Azimuth at Max (°)",
+        'results_export_direction_at_max': "Direction at Max",
         'results_export_time_max_utc': "Time at Max (UTC)",
         'results_export_time_max_local': "Time at Max (Selected TZ)",
+        'results_export_duration': "Visible Duration (h)",
         'results_expander_title': "{} ({}) - Mag: {:.1f}",
         'results_coords_header': "**Coordinates:**",
         'results_max_alt_header': "**Max. Altitude:**",
-        'results_azimuth_label': "(Azimuth: {:.1f}°)",
+        'results_azimuth_label': "(Azimuth: {:.1f}°{})",
+        'results_direction_label': ", Direction: {}",
         'results_best_time_header': "**Best Time (Selected TZ):**",
+        'results_duration_header': "**Visible Duration:**",
+        'results_duration_value': "{:.1f} hours",
         'results_plot_button': "📈 Altitude Plot",
         'results_spinner_plotting': "Creating plot...",
         'results_plot_error': "Plot Error: {}",
@@ -189,6 +201,9 @@ translations = {
         'window_already_passed': "Warning: Today's observation window has already passed. Calculating for tomorrow night.",
         'window_no_darkness': "Warning: Could not find astronomical darkness window for the night of {}. Using fallback.",
         'window_fallback_append': "\nFallback Observation Window: {} to {} UTC",
+        'error_loading_catalog': "Error loading catalog file: {}",
+        'info_catalog_loaded': "Catalog loaded: {} objects.",
+        'warning_catalog_empty': "Catalog file loaded, but no suitable objects found after filtering.",
     },
     'de': {
         'page_title': "Erweiterter DSO Finder",
@@ -228,6 +243,9 @@ translations = {
         'mag_filter_warning_min_max': "Min. Magnitude ist größer als Max. Magnitude!",
         'min_alt_header': "**Mindesthöhe**",
         'min_alt_label': "Min. Objekt-Höhe (°):",
+        'direction_filter_header': "**Filter Himmelsrichtung (Max. Höhe)**",
+        'direction_filter_label': "Zeige Objekte mit Max. Höhe in Richtung:",
+        'direction_option_all': "Alle",
         'moon_warning_header': "**Mond Warnung**",
         'moon_warning_label': "Warnen wenn Mond > (% Beleuchtung):",
         'object_types_header': "**Objekttypen**",
@@ -235,7 +253,9 @@ translations = {
         'object_types_label': "Typen filtern (leer = alle):",
         'results_options_expander': "⚙️ Ergebnis-Optionen",
         'results_options_max_objects_label': "Max. Anzahl Objekte zur Anzeige:",
-        'results_options_sort_brightness_label': "Nach Helligkeit sortieren (Hellste zuerst)",
+        'results_options_sort_method_label': "Ergebnisse sortieren nach:",
+        'results_options_sort_duration': "Dauer & Höhe",
+        'results_options_sort_magnitude': "Helligkeit",
         'moon_metric_label': "Mondhelligkeit (ca.)",
         'moon_warning_message': "Warnung: Mond ist heller ({:.0f}%) als Schwelle ({:.0f}%)!",
         'moon_phase_error': "Mondphasen-Berechnungsfehler: {}",
@@ -250,14 +270,15 @@ translations = {
         'search_params_filter_mag_bortle': "Bortle {} (<= {:.1f} mag)",
         'search_params_filter_mag_manual': "Manuell ({:.1f}-{:.1f} mag)",
         'search_params_filter_alt_types': "🔭 Filter: Min. Höhe {}°, Typen: {}",
+        'search_params_filter_direction': "🧭 Filter: Max. Höhe Richtung: {}",
         'search_params_types_all': "Alle",
+        'search_params_direction_all': "Alle",
         'spinner_searching': "Berechne Fenster & suche Objekte...",
         'window_info_template': "{}",
         'error_no_window': "Kein gültiges Beobachtungsfenster gefunden.",
         'success_objects_found': "{} passende Objekte gefunden.",
-        'info_showing_brightest': "Anzeige der {} hellsten:",
-        'info_showing_random': "Zufällige Auswahl von {}:",
-        'info_showing_list': "Liste der {} Objekte:",
+        'info_showing_list_duration': "Anzeige von {} Objekten, sortiert nach Sichtbarkeitsdauer und max. Höhe:",
+        'info_showing_list_magnitude': "Anzeige von {} Objekten, sortiert nach Helligkeit (hellste zuerst):",
         'error_search_unexpected': "Unerwarteter Fehler während der Suche:",
         'results_list_header': "Ergebnisliste",
         'results_export_name': "Name",
@@ -267,13 +288,18 @@ translations = {
         'results_export_dec': "Dec",
         'results_export_max_alt': "Max Höhe (°)",
         'results_export_az_at_max': "Azimut bei Max (°)",
+        'results_export_direction_at_max': "Richtung bei Max",
         'results_export_time_max_utc': "Zeit bei Max (UTC)",
         'results_export_time_max_local': "Zeit bei Max (Gewählte ZZ)",
+        'results_export_duration': "Sichtbare Dauer (h)",
         'results_expander_title': "{} ({}) - Mag: {:.1f}",
         'results_coords_header': "**Koordinaten:**",
         'results_max_alt_header': "**Max. Höhe:**",
-        'results_azimuth_label': "(Azimut: {:.1f}°)",
+        'results_azimuth_label': "(Azimut: {:.1f}°{})",
+        'results_direction_label': ", Richtung: {}",
         'results_best_time_header': "**Beste Zeit (Gewählte ZZ):**",
+        'results_duration_header': "**Sichtbare Dauer:**",
+        'results_duration_value': "{:.1f} Stunden",
         'results_plot_button': "📈 Höhenverlauf",
         'results_spinner_plotting': "Erstelle Plot...",
         'results_plot_error': "Plot Fehler: {}",
@@ -300,37 +326,35 @@ translations = {
         'window_already_passed': "Warnung: Heutiges Beobachtungsfenster ist bereits vorbei. Berechne für morgen Nacht.",
         'window_no_darkness': "Warnung: Konnte kein Fenster für astronomische Dunkelheit für die Nacht vom {} finden. Verwende Fallback.",
         'window_fallback_append': "\nFallback Beobachtungsfenster: {} bis {} UTC",
+        'error_loading_catalog': "Fehler beim Laden der Katalogdatei: {}",
+        'info_catalog_loaded': "Katalog geladen: {} Objekte.",
+        'warning_catalog_empty': "Katalogdatei geladen, aber keine passenden Objekte nach Filterung gefunden.",
     }
 }
 
-# --- Global Configuration & Catalog ---
+# --- Global Configuration ---
 DEFAULT_LOCATION_NAME = "Schötz, Lucerne"
 DEFAULT_LAT = 47.17
 DEFAULT_LON = 8.01
 DEFAULT_HEIGHT = 550
 DEFAULT_LOCATION = EarthLocation(lat=DEFAULT_LAT * u.deg, lon=DEFAULT_LON * u.deg, height=DEFAULT_HEIGHT * u.m)
 DEFAULT_TIMEZONE = "Europe/Zurich" # Default timezone
-# DSO Catalog (Unverändert)
-DSO_CATALOG = [
-    ["M1", "05h34m31.94s", "+22d00m52.2s", 8.4, "Supernova Remnant"], ["M13", "16h41m41.24s", "+36d27m35.5s", 5.8, "Globular Cluster"],
-    ["M27", "19h59m36.34s", "+22d43m16.1s", 7.4, "Planetary Nebula"], ["M31", "00h42m44.3s", "+41d16m09s", 3.4, "Galaxy"],
-    ["M33", "01h33m50.9s", "+30d39m37s", 5.7, "Galaxy"], ["M42", "05h35m17.3s", "-05d23m28s", 4.0, "Nebula"],
-    ["M44", "08h40m24s", "+19d41m00s", 3.1, "Open Cluster"], ["M45", "03h47m24s", "+24d07m00s", 1.6, "Open Cluster"],
-    ["M51", "13h29m52.7s", "+47d11m43s", 8.4, "Galaxy"], ["M57", "18h53m35.08s", "+33d01m45.0s", 8.8, "Planetary Nebula"],
-    ["M63", "13h15m49.3s", "+42d01m45s", 8.6, "Galaxy"], ["M64", "12h56m43.7s", "+21d40m58s", 8.5, "Galaxy"],
-    ["M81", "09h55m33.2s", "+69d03m55s", 6.9, "Galaxy"], ["M82", "09h55m52.2s", "+69d40m47s", 8.4, "Galaxy"],
-    ["M92", "17h17m07.27s", "+43d08m11.5s", 6.4, "Globular Cluster"], ["M97", "11h14m47.7s", "+55d01m09s", 9.9, "Planetary Nebula"],
-    ["M101", "14h03m12.6s", "+54d20m57s", 7.9, "Galaxy"], ["M104", "12h39m59.4s", "-11d37m23s", 8.0, "Galaxy"],
-    ["M106", "12h18m57.5s", "+47d18m14s", 8.4, "Galaxy"], ["M108", "11h11m31.0s", "+55d40m31s", 10.0, "Galaxy"],
-    ["M109", "11h57m36.0s", "+53d22m28s", 9.8, "Galaxy"], ["NGC 869", "02h19m00s", "+57d08m00s", 5.3, "Open Cluster"],
-    ["NGC 884", "02h22m24s", "+57d08m00s", 6.1, "Open Cluster"], ["NGC 2392", "07h29m10.8s", "+20d54m42s", 9.1, "Planetary Nebula"],
-    ["NGC 2841", "09h22m02.6s", "+50d58m35s", 9.2, "Galaxy"], ["NGC 4565", "12h36m20.8s", "+25d59m16s", 9.6, "Galaxy"],
-    ["NGC 6888", "20h12m06.5s", "+38d21m18s", 7.4, "Nebula"], ["NGC 6946", "20h34m52.3s", "+60d09m14s", 8.8, "Galaxy"],
-    ["NGC 6960", "20h45m38.0s", "+30d43m00s", 7.0, "Supernova Remnant"], ["NGC 6992", "20h56m24.0s", "+31d43m00s", 7.0, "Supernova Remnant"],
-    ["NGC 7000", "20h59m17s", "+44d31m44s", 4.0, "Nebula"], ["NGC 7293", "22h29m38.55s", "-20d50m13.6s", 7.3, "Planetary Nebula"],
-    ["NGC 7331", "22h37m04.1s", "+34d24m56s", 9.5, "Galaxy"], ["NGC 7662", "23h25m54.0s", "+42d32m06s", 8.3, "Planetary Nebula"],
-    ["IC 434", "05h40m59.0s", "-02d27m30s", 7.3, "Nebula"], ["IC 5146", "21h53m29.0s", "+47d16m06s", 7.2, "Nebula"],
-]
+
+# --- Path to Catalog File ---
+# Assume the script and the data file are in the same directory when deployed
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+# !!! WICHTIG: Stelle sicher, dass dieser Dateiname GENAU mit deiner hochgeladenen Datei übereinstimmt !!!
+CATALOG_FILENAME = "ongc.csv"
+# Construct path assuming CSV is in the SAME directory as the script
+CATALOG_FILEPATH = os.path.join(APP_DIR, CATALOG_FILENAME)
+
+
+# Define cardinal directions
+CARDINAL_DIRECTIONS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+# Add an option for 'All' for the selectbox (use English key for state)
+ALL_DIRECTIONS_KEY = translations['en']['direction_option_all'] # e.g., "All"
+DIRECTION_OPTIONS_EN = [ALL_DIRECTIONS_KEY] + CARDINAL_DIRECTIONS
+DIRECTION_OPTIONS_DE = [translations['de']['direction_option_all']] + CARDINAL_DIRECTIONS
 
 # --- Initialize Session State ---
 def initialize_session_state():
@@ -351,6 +375,8 @@ def initialize_session_state():
         'object_type_filter_exp': [],
         'selected_timezone': DEFAULT_TIMEZONE,
         'mag_filter_mode_exp': 'Bortle Scale',
+        'sort_method': 'Duration & Altitude',
+        'selected_peak_direction': ALL_DIRECTIONS_KEY, # Default to "All"
     }
     for key, default_value in defaults.items():
         if key not in st.session_state:
@@ -364,7 +390,12 @@ def get_magnitude_limit(bortle_scale: int) -> float:
     limits = {1: 15.5, 2: 15.5, 3: 14.5, 4: 14.5, 5: 13.5, 6: 12.5, 7: 11.5, 8: 10.5, 9: 9.5}
     return limits.get(bortle_scale, 9.5)
 
-# Use string literals for type hints involving potentially unimported types
+def azimuth_to_direction(azimuth_deg: float) -> str:
+    """Converts an azimuth angle (degrees) to a cardinal direction string."""
+    azimuth_deg = azimuth_deg % 360 # Ensure angle is within 0-360
+    index = round(azimuth_deg / 45) % 8
+    return CARDINAL_DIRECTIONS[index]
+
 def _get_fallback_window(reference_time: 'Time') -> tuple['Time', 'Time']:
     """Provides a default observation window (e.g., 9 PM to 3 AM local time) in UTC."""
     try:
@@ -386,7 +417,6 @@ def _get_fallback_window(reference_time: 'Time') -> tuple['Time', 'Time']:
           end_time_utc += timedelta(days=1)
     return start_time_utc, end_time_utc
 
-# Use string literals for type hints involving potentially unimported types
 def get_observable_window(observer_location: 'EarthLocation', reference_time: 'Time', is_now: bool, lang: str) -> tuple['Time' | None, 'Time' | None, str]:
     """Calculates the astronomical twilight window."""
     t = translations[lang]
@@ -436,16 +466,27 @@ def get_observable_window(observer_location: 'EarthLocation', reference_time: 'T
         status_message += t['window_fallback_info'].format(start_time.iso, end_time.iso)
         return start_time, end_time, status_message
 
-# Use string literals for type hints involving potentially unimported types
 def find_observable_objects(
-    location: 'EarthLocation', observing_times: 'Time', min_altitude_limit: 'u.Quantity',
-    magnitude_filter_mode: str, bortle_scale: int, manual_min_mag: float | None,
-    manual_max_mag: float | None, selected_object_types: list, lang: str
+    location: 'EarthLocation',
+    observing_times: 'Time',
+    min_altitude_limit: 'u.Quantity',
+    magnitude_filter_mode: str,
+    bortle_scale: int,
+    manual_min_mag: float | None,
+    manual_max_mag: float | None,
+    selected_object_types: list,
+    df_catalog: pd.DataFrame, # Pass DataFrame instead of using global
+    lang: str
 ) -> list:
-    """Finds DSOs from the catalog visible during the observing times."""
+    """
+    Finds DSOs from the catalog DataFrame visible during the observing times.
+    Calculates visibility duration and peak direction for sorting/filtering.
+    """
     t = translations[lang]
     observable_objects = []
     magnitude_limit = None
+
+    # Determine magnitude limit based on filter mode
     if magnitude_filter_mode == 'Bortle Scale':
         magnitude_limit = get_magnitude_limit(bortle_scale)
     elif magnitude_filter_mode == 'Manual':
@@ -455,33 +496,63 @@ def find_observable_objects(
         else:
              manual_min_mag = None # Disable filter if invalid
              manual_max_mag = None
-    for obj_data in DSO_CATALOG:
-        if len(obj_data) < 5: continue
-        name, ra_str, dec_str, mag, obj_type = obj_data
-        if selected_object_types and obj_type not in selected_object_types: continue
-        if not isinstance(mag, (int, float)): continue
+
+    # Iterate over the DataFrame rows
+    for index, row in df_catalog.iterrows():
+        # Get data from row
+        name = row['Name']
+        ra_str = row['RA_str'] # Use the pre-formatted string for SkyCoord
+        dec_str = row['Dec_str'] # Use the pre-formatted string for SkyCoord
+        mag = row['Mag'] # Use the cleaned magnitude
+        obj_type = row['Type']
+
+        # Apply Type Filter (if any types are selected)
+        if selected_object_types and obj_type not in selected_object_types:
+            continue
+
+        # Apply Magnitude Filter
+        if not isinstance(mag, (int, float)): continue # Skip if magnitude is invalid
+
         if magnitude_filter_mode == 'Bortle Scale':
-            if magnitude_limit is not None and mag > magnitude_limit: continue
+            if magnitude_limit is not None and mag > magnitude_limit:
+                continue
         elif magnitude_filter_mode == 'Manual':
             if isinstance(manual_min_mag, (int, float)) and isinstance(manual_max_mag, (int, float)):
-                 if not (manual_min_mag <= mag <= manual_max_mag): continue
+                 if not (manual_min_mag <= mag <= manual_max_mag):
+                     continue
+
+        # Calculate observability
         try:
-            target = SkyCoord(ra=ra_str, dec=dec_str, frame='icrs')
+            target = SkyCoord(ra=ra_str, dec=dec_str, frame='icrs', unit=(u.hourangle, u.deg))
             altaz_frame = AltAz(obstime=observing_times, location=location)
             target_altaz = target.transform_to(altaz_frame)
             altitudes = target_altaz.alt
             azimuths = target_altaz.az
             valid_indices = np.where(altitudes >= min_altitude_limit)[0]
+
             if len(valid_indices) > 0:
+                # Calculate peak altitude within the valid window
                 peak_in_window_index = valid_indices[np.argmax(altitudes[valid_indices])]
+                peak_alt_val = altitudes[peak_in_window_index].to(u.deg).value
+                peak_az_val = azimuths[peak_in_window_index].to(u.deg).value
+                peak_direction = azimuth_to_direction(peak_az_val) # Calculate direction
+
+                # Calculate duration above horizon
+                first_valid_time = observing_times[valid_indices[0]]
+                last_valid_time = observing_times[valid_indices[-1]]
+                duration = last_valid_time - first_valid_time
+                duration_hours = duration.to(u.hour).value if hasattr(duration, 'to') else duration.total_seconds() / 3600.0
+
                 observable_objects.append({
                     "name": name, "type": obj_type, "magnitude": mag,
                     "ra_str": ra_str, "dec_str": dec_str,
-                    "ra": target.ra.to_string(unit=u.hour, sep='hms', precision=1),
-                    "dec": target.dec.to_string(unit=u.deg, sep='dms', precision=0),
-                    "peak_alt": altitudes[peak_in_window_index].to(u.deg).value,
-                    "peak_az": azimuths[peak_in_window_index].to(u.deg).value,
+                    "ra": target.ra.to_string(unit=u.hour, sep='hms', precision=1), # Formatted RA
+                    "dec": target.dec.to_string(unit=u.deg, sep='dms', precision=0), # Formatted Dec
+                    "peak_alt": peak_alt_val,
+                    "peak_az": peak_az_val,
+                    "peak_direction": peak_direction, # Store direction
                     "peak_time_utc": observing_times[peak_in_window_index].iso,
+                    "duration_hours": duration_hours, # Store duration
                     "times_jd": observing_times.jd,
                     "altitudes": altitudes.to(u.deg).value,
                     "azimuths": azimuths.to(u.deg).value,
@@ -489,7 +560,9 @@ def find_observable_objects(
                 })
         except Exception as e:
             st.warning(t['error_processing_object'].format(name, e))
+
     return observable_objects
+
 
 def create_moon_phase_svg(illumination_fraction: float, size: int = 80) -> str:
     """Generates an SVG image for moon phase."""
@@ -503,90 +576,144 @@ def create_moon_phase_svg(illumination_fraction: float, size: int = 80) -> str:
     </svg>"""
     return svg
 
-# Use string literals for type hints involving potentially unimported types
 @st.cache_resource(show_spinner=False)
 def plot_altitude(obj_data: dict, location_tuple: tuple, lang: str, tz_name: str): # Added tz_name
     """Creates a Matplotlib altitude plot. Caches the figure object."""
-    # Note: Pylance might still show errors on type hints depending on environment.
     t = translations[lang]
-    if plt is None or mdates is None: return None # Check mdates import too
+    if plt is None or mdates is None: return None
     if pytz is None: return None
 
     fig, ax = plt.subplots()
     try:
         times = Time(obj_data['times_jd'], format='jd')
         try:
-            # Use the selected timezone passed as tz_name
             selected_tz = pytz.timezone(tz_name)
             times_local = [t_inst.to_datetime(timezone=selected_tz) for t_inst in times]
-            # Get a display name for the selected timezone
-            tz_name_display = tz_name # Use the full name for clarity
-            xlabel = t['plot_time_label_local'].format(tz_name_display) # Update label text
+            tz_name_display = tz_name
+            xlabel = t['plot_time_label_local'].format(tz_name_display)
         except Exception as tz_err:
-             print(f"Timezone conversion/lookup error in plot: {tz_err}") # Log error
-             # Fallback to UTC if timezone conversion fails
+             print(f"Timezone conversion/lookup error in plot: {tz_err}")
              times_local = times.datetime
              xlabel = t['plot_time_label_utc']
 
         ax.plot(times_local, obj_data['altitudes'], label=t['plot_altitude_label'], color='#00C0F0')
         ax.axhline(obj_data['min_alt_limit'], color='#FF4040', linestyle='--', label=t['plot_min_altitude_label'].format(obj_data["min_alt_limit"]))
         ax.set_ylim(0, 90)
-        ax.set_xlabel(xlabel) # Use potentially updated label
+        ax.set_xlabel(xlabel)
         ax.set_ylabel(t['plot_ylabel'])
         ax.set_title(t['plot_title'].format(obj_data['name']))
         ax.legend()
         ax.grid(True, linestyle=':', linewidth=0.5, color='#555555')
-
-        # FIX: Apply 24-hour time formatter to x-axis
         xfmt = mdates.DateFormatter('%H:%M') # Use 24-hour format
         ax.xaxis.set_major_formatter(xfmt)
-
         plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
         plt.tight_layout()
     except Exception as e:
-        print(f"Error plotting altitude for {obj_data.get('name', 'Unknown')}: {e}") # Log error
+        print(f"Error plotting altitude for {obj_data.get('name', 'Unknown')}: {e}")
         plt.close(fig)
-        return None # Indicate error
+        return None
     return fig
 
-# Modified to accept timezone name
 def get_local_time_str(utc_iso_time: str, tz_name: str) -> tuple[str, str]:
     """Converts UTC ISO time string to time string in the specified timezone."""
     try:
-        # Ensure Time and pytz are available
         if Time is None or pytz is None: return "N/A", ""
-        # Get the timezone object from the name
         selected_tz = pytz.timezone(tz_name)
         dt_peak_utc = Time(utc_iso_time).datetime.replace(tzinfo=timezone.utc)
-        # Convert to the selected timezone
         dt_peak_local = dt_peak_utc.astimezone(selected_tz)
-        # Use the provided tz_name for display or get abbreviation if needed/possible
-        tz_display_name = tz_name # Or potentially selected_tz.tzname(dt_peak_local) if desired
+        tz_display_name = tz_name
         peak_time_local_str = dt_peak_local.strftime('%Y-%m-%d %H:%M:%S')
     except Exception as e:
-        print(f"Error converting time to timezone {tz_name}: {e}") # Log error
-        tz_display_name = tz_name # Still display the intended timezone name
+        print(f"Error converting time to timezone {tz_name}: {e}")
+        tz_display_name = tz_name
         peak_time_local_str = "N/A"
     return peak_time_local_str, tz_display_name
+
+# --- Data Loading Function ---
+@st.cache_data # Cache the loaded and processed data
+def load_ongc_data(catalog_path: str, lang: str) -> pd.DataFrame | None:
+    """Loads, filters, and preprocesses data from the OpenNGC CSV file."""
+    t = translations[lang]
+    try:
+        # Reverted to sep=';' based on user feedback
+        # Removed engine='python' as likely not needed for semicolon
+        df = pd.read_csv(catalog_path, sep=';', comment='#')
+
+        # --- Data Cleaning & Filtering ---
+        # 1. Filter by Object Type (Keep common DSO types)
+        dso_types = ['Galaxy', 'Globular Cluster', 'Open Cluster', 'Nebula',
+                     'Planetary Nebula', 'Supernova Remnant', 'HII', 'Emission Nebula',
+                     'Reflection Nebula', 'Cluster + Nebula', 'Gal', 'GCl', 'Gx', 'OC',
+                     'PN', 'SNR', 'Neb', 'EmN', 'RfN', 'C+N', 'Gxy', 'AGN']
+        type_pattern = '|'.join(dso_types)
+        if 'Type' not in df.columns:
+            st.error("Column 'Type' not found in the catalog file.")
+            return None
+        df_filtered = df[df['Type'].str.contains(type_pattern, case=False, na=False)].copy()
+
+        # 2. Handle Magnitude (Convert to numeric, handle errors/missing values)
+        mag_col = None
+        if 'B-Mag' in df_filtered.columns: mag_col = 'B-Mag'
+        elif 'Mag' in df_filtered.columns: mag_col = 'Mag'
+
+        if mag_col is None:
+            st.error(f"Magnitude column ('B-Mag' or 'Mag') not found.")
+            return None
+        df_filtered['Mag'] = pd.to_numeric(df_filtered[mag_col], errors='coerce')
+        df_filtered.dropna(subset=['Mag'], inplace=True)
+
+        # 3. Handle Coordinates
+        if 'RA' not in df_filtered.columns or 'Dec' not in df_filtered.columns:
+             st.error("RA or Dec column not found.")
+             return None
+        df_filtered['RA_str'] = df_filtered['RA']
+        df_filtered['Dec_str'] = df_filtered['Dec']
+
+        # 4. Select and Rename Columns
+        if 'Name' not in df_filtered.columns:
+            st.error("'Name' column not found.")
+            return None
+        df_final = df_filtered[['Name', 'RA_str', 'Dec_str', 'Mag', 'Type']].copy()
+
+        st.success(t['info_catalog_loaded'].format(len(df_final)))
+        if df_final.empty:
+             st.warning(t['warning_catalog_empty'])
+             return None
+        return df_final
+
+    except FileNotFoundError:
+        st.error(f"Catalog file not found at: {catalog_path}")
+        st.info("Please ensure the file exists and the path/filename in the script are correct.")
+        return None
+    except pd.errors.EmptyDataError:
+        st.error(f"Catalog file is empty: {catalog_path}")
+        return None
+    except Exception as e:
+        st.error(t['error_loading_catalog'].format(e))
+        if "tokenizing data" in str(e):
+             st.info("This often means the wrong separator (delimiter) or inconsistent file structure. Please check the actual separator in your file (e.g., ';', ',', '\\t') and adjust the 'sep=...' argument in the load_ongc_data function accordingly.")
+        else:
+             st.info("Please check the file path, filename, and format.")
+        st.exception(e)
+        return None
 
 # --- Get Current Language and Translations ---
 lang = st.session_state.language
 t = translations[lang]
 
+# --- Load Catalog Data ---
+df_catalog_data = load_ongc_data(CATALOG_FILEPATH, lang)
+
 # --- Custom CSS Styling ---
 st.markdown("""
 <style>
-    /* General container styling */
+    /* (CSS unchanged) */
     .main .block-container { background-color: #1E1E1E; color: #EAEAEA; border-radius: 10px; padding: 2rem; }
-    /* Primary button */
     div[data-testid="stButton"] > button:not([kind="secondary"]) { background-image: linear-gradient(to right, #007bff, #0056b3); color: white; border: none; padding: 10px 24px; text-align: center; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 8px; transition-duration: 0.4s; }
     div[data-testid="stButton"] > button:not([kind="secondary"]):hover { background-image: linear-gradient(to right, #0056b3, #003d80); color: white; }
-    /* Secondary button (Close Plot) */
      div[data-testid="stButton"] > button[kind="secondary"] { background-color: #555; color: #eee; }
      div[data-testid="stButton"] > button[kind="secondary"]:hover { background-color: #777; color: white; }
-    /* Expander header */
     .streamlit-expanderHeader { background-color: #333333; color: #EAEAEA; border-radius: 5px; }
-    /* Metric display */
     div[data-testid="stMetric"] { background-color: #2a2a2a; border-radius: 8px; padding: 10px; }
     div[data-testid="stMetric"] > div[data-testid="stMetricLabel"] { color: #AAAAAA; }
 </style>
@@ -602,10 +729,8 @@ with st.sidebar:
     # --- Language Selector ---
     language_options = {'en': 'English', 'de': 'Deutsch'}
     selected_lang_key = st.radio(
-        t['language_select_label'],
-        options=language_options.keys(),
-        format_func=lambda key: language_options[key],
-        key='language_radio',
+        t['language_select_label'], options=language_options.keys(),
+        format_func=lambda key: language_options[key], key='language_radio',
         index=list(language_options.keys()).index(st.session_state.language)
     )
     if selected_lang_key != st.session_state.language:
@@ -618,75 +743,48 @@ with st.sidebar:
             'Default': t['location_option_default'].format(DEFAULT_LOCATION_NAME),
             'Manual': t['location_option_manual']
         }
-        # Display radio button first
-        st.radio( # Assigns choice to st.session_state.location_choice_key
-            t['location_select_label'],
-            options=list(location_options_map.keys()),
-            format_func=lambda key: location_options_map[key],
-            key="location_choice_key",
-        )
-
-        # Initialize variables used later
+        st.radio(t['location_select_label'], options=list(location_options_map.keys()),
+            format_func=lambda key: location_options_map[key], key="location_choice_key")
         current_location_for_run = None
         location_is_valid_for_run = False
         location_display_name_for_run = ""
-        warning_placeholder = st.empty() # Placeholder remains useful
+        warning_placeholder = st.empty()
 
-        # --- Conditionally display manual inputs ---
         if st.session_state.location_choice_key == "Manual":
-            # Display inputs ONLY if Manual is selected
-            st.number_input( # No need to assign return value, state is managed by key
-                 t['location_lat_label'], min_value=-90.0, max_value=90.0, step=0.01, format="%.4f",
-                 key="manual_lat_val" # State key is still used
-            )
-            st.number_input(
-                t['location_lon_label'], min_value=-180.0, max_value=180.0, step=0.01, format="%.4f",
-                key="manual_lon_val" # State key is still used
-            )
-            st.number_input(
-                t['location_elev_label'], min_value=-500, step=10, format="%d",
-                key="manual_height_val" # State key is still used
-            )
-
-            # --- Determine validity and location object for Manual mode ---
+            st.number_input(t['location_lat_label'], min_value=-90.0, max_value=90.0, step=0.01, format="%.4f", key="manual_lat_val")
+            st.number_input(t['location_lon_label'], min_value=-180.0, max_value=180.0, step=0.01, format="%.4f", key="manual_lon_val")
+            st.number_input(t['location_elev_label'], min_value=-500, step=10, format="%d", key="manual_height_val")
             lat_val = st.session_state.manual_lat_val
             lon_val = st.session_state.manual_lon_val
             height_val = st.session_state.manual_height_val
             if lat_val is None or lon_val is None or height_val is None or \
-               not isinstance(lat_val, (int, float)) or \
-               not isinstance(lon_val, (int, float)) or \
-               not isinstance(height_val, (int, float)):
+               not isinstance(lat_val, (int, float)) or not isinstance(lon_val, (int, float)) or not isinstance(height_val, (int, float)):
                 warning_placeholder.warning(t['location_error_manual_none'])
                 location_display_name_for_run = t['location_error_fallback']
-                location_is_valid_for_run = False # Explicitly set invalid
             else:
                 try:
                     current_location_for_run = EarthLocation(lat=lat_val * u.deg, lon=lon_val * u.deg, height=height_val * u.m)
                     location_display_name_for_run = t['location_manual_display'].format(lat_val, lon_val)
-                    location_is_valid_for_run = True # Valid
-                    warning_placeholder.empty() # Clear warning if valid
+                    location_is_valid_for_run = True
+                    warning_placeholder.empty()
                 except Exception as e:
-                    st.error(t['location_error'].format(e)) # Show error outside placeholder
+                    st.error(t['location_error'].format(e))
                     location_display_name_for_run = t['location_error_fallback']
-                    location_is_valid_for_run = False # Invalid due to creation error
-        else: # Default location selected
+        else: # Default location
              current_location_for_run = DEFAULT_LOCATION
              location_display_name_for_run = t['location_option_default'].format(DEFAULT_LOCATION_NAME)
-             location_is_valid_for_run = True # Default is always valid
-             # Clear any warning from previous manual selection
+             location_is_valid_for_run = True
              warning_placeholder.empty()
 
-
     # --- Time & Timezone Settings ---
-    with st.expander(t['time_expander'], expanded=True): # Expand by default
-        # Time Selection
+    with st.expander(t['time_expander'], expanded=True):
         time_options_map = {'Now': t['time_option_now'], 'Specific': t['time_option_specific']}
         time_choice_key = st.radio(
             t['time_select_label'], options=time_options_map.keys(),
             format_func=lambda key: time_options_map[key], key="time_choice_exp"
         )
         is_time_now = (time_choice_key == "Now")
-        reference_time = Time.now() # Get current time initially
+        reference_time = Time.now()
         if not is_time_now:
             selected_date = st.date_input(
                 t['time_date_select_label'], date.today(),
@@ -694,67 +792,32 @@ with st.sidebar:
                 max_value=date.today()+timedelta(days=365*1)
             )
             reference_time = Time(datetime.combine(selected_date, time(12, 0)))
-
-        # Timezone Selection
-        st.markdown("---") # Separator
+        st.markdown("---")
         common_timezones = ["UTC", "Europe/Zurich", "Europe/Berlin", "Europe/London", "America/New_York", "America/Los_Angeles", "Asia/Tokyo"]
-        # Ensure default is in the list
-        if DEFAULT_TIMEZONE not in common_timezones:
-             common_timezones.insert(0, DEFAULT_TIMEZONE)
-        # Get current index
+        if DEFAULT_TIMEZONE not in common_timezones: common_timezones.insert(0, DEFAULT_TIMEZONE)
         try:
             current_tz_index = common_timezones.index(st.session_state.selected_timezone)
         except ValueError:
-            # If value in state is invalid, fallback to default
             st.session_state.selected_timezone = DEFAULT_TIMEZONE
             current_tz_index = common_timezones.index(DEFAULT_TIMEZONE)
-
-        selected_tz_widget = st.selectbox(
-            t['timezone_select_label'],
-            options=common_timezones,
-            index=current_tz_index,
-            key="selected_timezone" # Use state key directly
-        )
+        st.selectbox(t['timezone_select_label'], options=common_timezones, index=current_tz_index, key="selected_timezone")
 
     # --- Filter Settings ---
     with st.expander(t['filters_expander'], expanded=True):
         # Magnitude Filter
         st.markdown(t['mag_filter_header'])
         mag_filter_options_map = {'Bortle Scale': t['mag_filter_option_bortle'], 'Manual': t['mag_filter_option_manual']}
-        # Radio button to choose filter method
-        st.radio( # Assign to state via key, don't need the return value here
-            t['mag_filter_method_label'], options=mag_filter_options_map.keys(),
-            format_func=lambda key: mag_filter_options_map[key],
-            key="mag_filter_mode_exp", # Use state key
-            horizontal=True
-        )
-
-        # Initialize values needed later
+        st.radio(t['mag_filter_method_label'], options=mag_filter_options_map.keys(),
+            format_func=lambda key: mag_filter_options_map[key], key="mag_filter_mode_exp", horizontal=True)
         bortle_val = 5
         manual_min_mag_val = st.session_state.manual_min_mag_slider
         manual_max_mag_val = st.session_state.manual_max_mag_slider
-
-        # --- Conditionally display widgets based on radio button choice ---
-        # Access state directly here, as it's guaranteed to be initialized
         if st.session_state.mag_filter_mode_exp == "Bortle Scale":
-            bortle_val = st.slider( # Display Bortle slider
-                t['mag_filter_bortle_label'], min_value=1, max_value=9, value=5, step=1, help=t['mag_filter_bortle_help'],
-                key='bortle_slider' # Use a unique key
-            )
+            bortle_val = st.slider(t['mag_filter_bortle_label'], min_value=1, max_value=9, value=5, step=1, help=t['mag_filter_bortle_help'], key='bortle_slider')
         elif st.session_state.mag_filter_mode_exp == "Manual":
-            manual_min_mag_val = st.slider( # Display Min Mag slider
-                t['mag_filter_min_mag_label'], min_value=0.0, max_value=20.0,
-                step=0.5, format="%.1f", help=t['mag_filter_min_mag_help'],
-                key='manual_min_mag_slider' # Use state key
-            )
-            manual_max_mag_val = st.slider( # Display Max Mag slider
-                t['mag_filter_max_mag_label'], min_value=0.0, max_value=20.0,
-                step=0.5, format="%.1f", help=t['mag_filter_max_mag_help'],
-                key='manual_max_mag_slider' # Use state key
-            )
-            # Display warning only in Manual mode
-            if isinstance(st.session_state.manual_min_mag_slider, (int, float)) and \
-               isinstance(st.session_state.manual_max_mag_slider, (int, float)):
+            manual_min_mag_val = st.slider(t['mag_filter_min_mag_label'], min_value=0.0, max_value=20.0, step=0.5, format="%.1f", help=t['mag_filter_min_mag_help'], key='manual_min_mag_slider')
+            manual_max_mag_val = st.slider(t['mag_filter_max_mag_label'], min_value=0.0, max_value=20.0, step=0.5, format="%.1f", help=t['mag_filter_max_mag_help'], key='manual_max_mag_slider')
+            if isinstance(st.session_state.manual_min_mag_slider, (int, float)) and isinstance(st.session_state.manual_max_mag_slider, (int, float)):
                  if st.session_state.manual_min_mag_slider > st.session_state.manual_max_mag_slider:
                      st.warning(t['mag_filter_warning_min_max'])
 
@@ -769,32 +832,71 @@ with st.sidebar:
         st.markdown(t['moon_warning_header'])
         moon_phase_threshold = st.slider(t['moon_warning_label'], min_value=0, max_value=100, value=35, step=5)
 
-        # Object Type Filter
+        # Object Type Filter (Kept as Multiselect)
         st.markdown("---")
         st.markdown(t['object_types_header'])
-        try:
-            all_types = sorted(list(set(item[4] for item in DSO_CATALOG if len(item) > 4)))
-        except IndexError:
-            all_types = []
-            st.warning(t['object_types_error_extract'])
-
         effective_selected_types = []
-        if all_types:
-            current_selection_in_state = st.session_state.object_type_filter_exp
-            default_for_widget = current_selection_in_state if current_selection_in_state else all_types
-            selected_object_types = st.multiselect(
-                t['object_types_label'], options=all_types,
-                default=default_for_widget, key="object_type_filter_exp"
-            )
-            if selected_object_types is None: selected_object_types = []
-            effective_selected_types = selected_object_types if selected_object_types else all_types
-        else:
-             st.info("No object types found in catalog to filter.")
+        if df_catalog_data is not None and not df_catalog_data.empty:
+            try:
+                all_types = sorted(list(df_catalog_data['Type'].astype(str).unique()))
+            except Exception as e:
+                st.warning(f"Could not extract object types from loaded data: {e}")
+                all_types = []
+            if all_types:
+                current_selection_in_state = st.session_state.object_type_filter_exp
+                default_for_widget = current_selection_in_state if current_selection_in_state else all_types
+                selected_object_types = st.multiselect(
+                    t['object_types_label'], options=all_types,
+                    default=default_for_widget, key="object_type_filter_exp"
+                )
+                if selected_object_types is None: selected_object_types = []
+                effective_selected_types = selected_object_types if selected_object_types else all_types
+            else: st.info("No object types found in catalog data.")
+        else: st.info("Catalog not loaded, cannot filter by type.")
+
+        # Direction Filter (Changed to Selectbox)
+        st.markdown("---")
+        st.markdown(t['direction_filter_header'])
+        # Prepare options including "All" using the current language
+        all_directions_str = t['direction_option_all']
+        direction_options = [all_directions_str] + CARDINAL_DIRECTIONS
+        # Find index of current selection in state
+        try:
+            # Ensure the value in state is one of the valid options
+            current_direction = st.session_state.selected_peak_direction
+            if current_direction not in direction_options:
+                 current_direction = all_directions_str # Fallback to "All"
+                 st.session_state.selected_peak_direction = current_direction
+            current_direction_index = direction_options.index(current_direction)
+        except ValueError:
+             # Fallback if state is somehow completely wrong
+             st.session_state.selected_peak_direction = all_directions_str
+             current_direction_index = 0
+
+        st.selectbox(
+             t['direction_filter_label'],
+             options=direction_options,
+             index=current_direction_index,
+             key='selected_peak_direction' # State key stores the selected direction string ("All", "N", "NE", etc.)
+        )
 
     # --- Result Options ---
     with st.expander(t['results_options_expander']):
-        num_objects_to_suggest = st.slider(t['results_options_max_objects_label'], min_value=5, max_value=len(DSO_CATALOG), value=20, step=1)
-        sort_by_brightness = st.checkbox(t['results_options_sort_brightness_label'], value=True)
+        max_slider_val = len(df_catalog_data) if df_catalog_data is not None else 50
+        num_objects_to_suggest = st.slider(t['results_options_max_objects_label'], min_value=5, max_value=max_slider_val, value=min(20, max_slider_val), step=1)
+        # --- Add Sort Method Selection ---
+        sort_options_map = {
+            'Duration & Altitude': t['results_options_sort_duration'],
+            'Brightness': t['results_options_sort_magnitude']
+        }
+        st.radio(
+            t['results_options_sort_method_label'],
+            options=list(sort_options_map.keys()),
+            format_func=lambda key: sort_options_map[key],
+            key='sort_method', # Use state key
+            horizontal=True
+        )
+
 
 # --- Main Area ---
 # Display Moon Phase
@@ -802,14 +904,11 @@ try:
     current_moon_illumination = moon_illumination(reference_time)
     moon_percentage = current_moon_illumination * 100
     moon_col1, moon_col2 = st.columns([1, 4])
-    with moon_col1:
-        st.markdown(create_moon_phase_svg(current_moon_illumination, size=80), unsafe_allow_html=True)
+    with moon_col1: st.markdown(create_moon_phase_svg(current_moon_illumination, size=80), unsafe_allow_html=True)
     with moon_col2:
         st.metric(label=t['moon_metric_label'], value=f"{moon_percentage:.0f}%")
-        if moon_percentage > moon_phase_threshold:
-            st.error(t['moon_warning_message'].format(moon_percentage, moon_phase_threshold))
-except Exception as e:
-    st.error(t['moon_phase_error'].format(e))
+        if moon_percentage > moon_phase_threshold: st.error(t['moon_warning_message'].format(moon_percentage, moon_phase_threshold))
+except Exception as e: st.error(t['moon_phase_error'].format(e))
 
 st.markdown("---")
 
@@ -819,11 +918,9 @@ if st.button(t['find_button_label'], key="find_button"):
     st.session_state.show_plot = False
     st.session_state.plot_object_name = None
 
-    # Use the validity flag determined in the sidebar for this run
-    if not location_is_valid_for_run:
-         st.error(t['location_error_manual_search'])
-    elif current_location_for_run is None:
-         st.error(t['location_error_undefined'])
+    if df_catalog_data is None or df_catalog_data.empty: st.error("Cannot search: Catalog data is not loaded or empty.")
+    elif not location_is_valid_for_run: st.error(t['location_error_manual_search'])
+    elif current_location_for_run is None: st.error(t['location_error_undefined'])
     else:
         # --- Start Search Process ---
         st.session_state.find_button_pressed = True
@@ -832,23 +929,18 @@ if st.button(t['find_button_label'], key="find_button"):
         # Display search parameters used
         with st.container(border=True):
              st.subheader(t['search_params_header'])
-             col1, col2, col3 = st.columns(3) # Use 3 columns
-             with col1:
-                 st.info(t['search_params_location'].format(location_display_name_for_run))
+             col1, col2, col3 = st.columns(3)
+             with col1: st.info(t['search_params_location'].format(location_display_name_for_run))
              with col2:
                  date_str_display = reference_time.datetime.date().strftime('%Y-%m-%d')
                  time_info = t['search_params_time_now'].format(reference_time.to_datetime(timezone.utc).strftime('%Y-%m-%d %H:%M %Z')) if is_time_now else t['search_params_time_specific'].format(date_str_display)
                  st.info(t['search_params_time'].format(time_info))
-                 # Display selected timezone
                  st.info(t['search_params_timezone'].format(st.session_state.selected_timezone))
              with col3:
-                 # Read filter values directly from state for display/use
-                 # Use the mode selected via the radio button's key
                  magnitude_filter_mode_disp = st.session_state.mag_filter_mode_exp
                  min_mag_disp = st.session_state.manual_min_mag_slider
                  max_mag_disp = st.session_state.manual_max_mag_slider
                  if magnitude_filter_mode_disp == "Bortle Scale":
-                     # Read bortle value used in calculation (might be default if slider not shown)
                      mag_limit_display = get_magnitude_limit(bortle_val)
                      mag_info = t['search_params_filter_mag_bortle'].format(bortle_val, mag_limit_display)
                  else: # Manual
@@ -856,6 +948,10 @@ if st.button(t['find_button_label'], key="find_button"):
                  st.info(t['search_params_filter_mag'].format(mag_info))
                  types_display = t['search_params_types_all'] if not effective_selected_types or len(effective_selected_types) == len(all_types) else ', '.join(effective_selected_types)
                  st.info(t['search_params_filter_alt_types'].format(min_altitude_deg, types_display))
+                 # Display Direction Filter
+                 selected_dir_disp = st.session_state.selected_peak_direction # Get selected direction for display
+                 st.info(t['search_params_filter_direction'].format(selected_dir_disp))
+
         st.markdown("---")
 
         # --- Perform Calculations ---
@@ -867,51 +963,69 @@ if st.button(t['find_button_label'], key="find_button"):
                 start_time, end_time, window_msg = get_observable_window(current_location_for_run, reference_time, is_time_now, lang)
                 if window_msg:
                     formatted_window_msg = window_msg.replace("\n", "\n\n")
-                    if "Warning" in window_msg or "Warnung" in window_msg or "Error" in window_msg or "Fehler" in window_msg:
-                        st.warning(formatted_window_msg)
-                    else:
-                        st.info(formatted_window_msg)
+                    if "Warning" in window_msg or "Warnung" in window_msg or "Error" in window_msg or "Fehler" in window_msg: st.warning(formatted_window_msg)
+                    else: st.info(formatted_window_msg)
 
                 # 2. Find Objects if window is valid
                 if start_time and end_time and start_time < end_time:
                     time_delta_hours = (end_time - start_time).to(u.hour).value
                     num_time_steps = max(30, int(time_delta_hours * 10))
                     observing_times = Time(np.linspace(start_time.jd, end_time.jd, num_time_steps), format='jd')
-                    # Read filter values directly from state for calculation
-                    # Use the mode selected via the radio button's key
                     magnitude_filter_mode_calc = st.session_state.mag_filter_mode_exp
                     min_mag_calc = st.session_state.manual_min_mag_slider
                     max_mag_calc = st.session_state.manual_max_mag_slider
                     all_found_objects = find_observable_objects(
                         current_location_for_run, observing_times, min_altitude_limit,
                         magnitude_filter_mode_calc, bortle_val, min_mag_calc, max_mag_calc,
-                        effective_selected_types, lang
+                        effective_selected_types, df_catalog_data, lang
                     )
                 else:
-                     if not window_msg or ("valid" not in window_msg and "gültig" not in window_msg):
-                          st.error(t['error_no_window'])
+                     if not window_msg or ("valid" not in window_msg and "gültig" not in window_msg): st.error(t['error_no_window'])
 
-            # 3. Process and Display Results Summary
-            if all_found_objects:
-                st.success(t['success_objects_found'].format(len(all_found_objects)))
-                processed_objects = all_found_objects
-                if sort_by_brightness:
-                    processed_objects.sort(key=lambda x: x['magnitude'])
-                    selected_objects = processed_objects[:num_objects_to_suggest]
-                    st.write(t['info_showing_brightest'].format(len(selected_objects)))
-                else:
-                    if len(processed_objects) > num_objects_to_suggest:
-                        selected_objects = random.sample(processed_objects, num_objects_to_suggest)
-                        selected_objects.sort(key=lambda x: x['name'])
-                        st.write(t['info_showing_random'].format(num_objects_to_suggest))
-                    else:
-                        selected_objects = processed_objects
-                        selected_objects.sort(key=lambda x: x['name'])
-                        st.write(t['info_showing_list'].format(len(selected_objects)))
+            # 3. Apply Direction Filter (if needed)
+            objects_after_direction_filter = []
+            selected_dir_filter = st.session_state.selected_peak_direction
+            all_directions_str = t['direction_option_all'] # Get translated "All" string
+
+            # Only filter if a specific direction (not "All") is selected
+            if selected_dir_filter != all_directions_str:
+                for obj in all_found_objects:
+                    if obj.get('peak_direction') == selected_dir_filter: # Compare with selected direction
+                        objects_after_direction_filter.append(obj)
+            else: # "All" selected, no direction filter needed
+                objects_after_direction_filter = all_found_objects
+
+            # 4. Process and Display Results Summary
+            if objects_after_direction_filter:
+                st.success(t['success_objects_found'].format(len(objects_after_direction_filter))) # Show count *after* direction filter
+
+                # --- Conditional Sorting ---
+                sort_method = st.session_state.sort_method
+                # Apply sorting to the potentially filtered list
+                if sort_method == 'Duration & Altitude':
+                    objects_after_direction_filter.sort(key=lambda x: (x.get('duration_hours', 0), x.get('peak_alt', 0)), reverse=True)
+                    info_message = t['info_showing_list_duration']
+                elif sort_method == 'Brightness':
+                    objects_after_direction_filter.sort(key=lambda x: x['magnitude']) # Ascending magnitude = Brightest first
+                    info_message = t['info_showing_list_magnitude']
+                else: # Default fallback
+                    objects_after_direction_filter.sort(key=lambda x: (x.get('duration_hours', 0), x.get('peak_alt', 0)), reverse=True)
+                    info_message = t['info_showing_list_duration']
+
+                selected_objects = objects_after_direction_filter[:num_objects_to_suggest]
+                st.write(info_message.format(len(selected_objects))) # Use appropriate message
                 st.session_state.last_results = selected_objects
             else:
-                 if start_time and end_time and start_time < end_time:
+                 # Check if objects were found *before* direction filter
+                 if all_found_objects and selected_dir_filter != all_directions_str:
+                      st.warning(f"No objects found peaking in the selected direction: {selected_dir_filter}")
+                 elif all_found_objects and selected_dir_filter == all_directions_str:
+                     # This case means no objects matched *other* criteria
                      st.warning(t['warning_no_objects_found'])
+                 elif start_time and end_time and start_time < end_time:
+                     # No objects found even before direction filter
+                     st.warning(t['warning_no_objects_found'])
+
                  st.session_state.last_results = []
         except Exception as main_e:
             st.error(t['error_search_unexpected'])
@@ -926,23 +1040,27 @@ if st.session_state.last_results:
     export_data = []
 
     for i, obj in enumerate(st.session_state.last_results):
-        # Pass selected timezone name to conversion function
         peak_time_local_str, tz_display_name = get_local_time_str(obj['peak_time_utc'], st.session_state.selected_timezone)
         export_data.append({
             t['results_export_name']: obj['name'], t['results_export_type']: obj['type'],
             t['results_export_mag']: obj['magnitude'], t['results_export_ra']: obj['ra'],
             t['results_export_dec']: obj['dec'], t['results_export_max_alt']: f"{obj['peak_alt']:.1f}",
-            t['results_export_az_at_max']: f"{obj['peak_az']:.1f}", t['results_export_time_max_utc']: obj['peak_time_utc'],
-            # Use the converted time and display name
+            t['results_export_az_at_max']: f"{obj.get('peak_az', ''):.1f}",
+            t['results_export_direction_at_max']: obj.get('peak_direction', ''),
+            t['results_export_duration']: f"{obj.get('duration_hours', 0):.1f}",
+            t['results_export_time_max_utc']: obj['peak_time_utc'],
             t['results_export_time_max_local']: f"{peak_time_local_str} ({tz_display_name})"
         })
         expander_title = t['results_expander_title'].format(obj['name'], obj['type'], obj['magnitude'])
         is_expanded = (st.session_state.expanded_object_name == obj['name'])
         with st.expander(expander_title, expanded=is_expanded):
-            col1, col2, col3 = st.columns(3)
+            col1, col2, col3, col4, col5 = st.columns(5)
             with col1: st.markdown(t['results_coords_header']); st.markdown(f"RA: {obj['ra']}"); st.markdown(f"Dec: {obj['dec']}")
-            with col2: st.markdown(t['results_max_alt_header']); st.markdown(f"**{obj['peak_alt']:.1f}°**"); st.markdown(t['results_azimuth_label'].format(obj['peak_az']))
-            with col3: st.markdown(t['results_best_time_header']); st.markdown(f"**{peak_time_local_str}**"); st.markdown(f"({tz_display_name})") # Use display name
+            with col2: st.markdown(t['results_max_alt_header']); st.markdown(f"**{obj['peak_alt']:.1f}°**"); st.markdown(t['results_azimuth_label'].format(obj.get('peak_az', 0.0), f" ({obj.get('peak_direction', '?')})")) # Show direction with Azimuth
+            with col3: st.markdown(t['results_duration_header']); st.markdown(f"**{t['results_duration_value'].format(obj.get('duration_hours', 0))}**")
+            with col4: st.markdown(t['results_best_time_header']); st.markdown(f"**{peak_time_local_str}**"); st.markdown(f"({tz_display_name})")
+            with col5: st.markdown(f"**Type:**"); st.markdown(f"{obj['type']}")
+
             st.markdown("---")
 
             # Plotting Logic
@@ -959,7 +1077,6 @@ if st.session_state.last_results:
                     with st.spinner(t['results_spinner_plotting']):
                         try:
                             location_tuple = None
-                            # FIX: Use 'is not None' for EarthLocation check
                             if current_location_for_run is not None:
                                 location_tuple = (
                                     current_location_for_run.lat.deg,
@@ -967,10 +1084,9 @@ if st.session_state.last_results:
                                     current_location_for_run.height.value
                                 )
                             if location_tuple:
-                                # Call the cached function, passing selected timezone name
                                 fig = plot_altitude(obj, location_tuple, lang, st.session_state.selected_timezone)
                                 if fig:
-                                    st.pyplot(fig) # Display the cached figure object
+                                    st.pyplot(fig)
                                     if st.button(t['results_close_plot_button'], key=close_button_key, type="secondary"):
                                         st.session_state.show_plot = False
                                         st.session_state.plot_object_name = None
@@ -979,19 +1095,23 @@ if st.session_state.last_results:
                                 else:
                                     st.warning(t['results_plot_not_created'])
                                     st.session_state.show_plot = False; st.session_state.plot_object_name = None; st.session_state.expanded_object_name = None
-                            else:
-                                 st.error("Location not defined for plotting.")
+                            else: st.error("Location not defined for plotting.")
                         except Exception as plot_e:
                             st.error(t['results_plot_error'].format(plot_e))
                             st.session_state.show_plot = False; st.session_state.plot_object_name = None; st.session_state.expanded_object_name = None
-                 else:
-                      st.warning("Plotting skipped: Matplotlib library missing.")
+                 else: st.warning("Plotting skipped: Matplotlib library missing.")
 
     # --- CSV Export ---
     if export_data and pd:
         st.markdown("---")
         try:
             df = pd.DataFrame(export_data)
+            cols = [t['results_export_name'], t['results_export_type'], t['results_export_mag'],
+                    t['results_export_duration'], t['results_export_max_alt'], t['results_export_az_at_max'], t['results_export_direction_at_max'],
+                    t['results_export_time_max_local'], t['results_export_time_max_utc'],
+                    t['results_export_ra'], t['results_export_dec']]
+            cols_exist = [col for col in cols if col in df.columns]
+            df = df[cols_exist]
             csv_buffer = io.StringIO()
             df.to_csv(csv_buffer, index=False, sep=';', encoding='utf-8-sig')
             file_date = reference_time.datetime.date().strftime('%Y%m%d')
@@ -1007,6 +1127,8 @@ elif st.session_state.find_button_pressed and not st.session_state.last_results:
     st.session_state.find_button_pressed = False # Reset state
 
 # Initial message
-elif not st.session_state.find_button_pressed:
+elif not st.session_state.find_button_pressed and df_catalog_data is not None:
     st.info(t['info_initial_prompt'])
+elif df_catalog_data is None:
+     st.error("Failed to load the DSO catalog. Please check the file path and format.")
 
