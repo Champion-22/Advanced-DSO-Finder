@@ -99,7 +99,7 @@ if not essential_imports_ok:
     st.stop()
 
 # --- Translations ---
-# (Übersetzungen bleiben weitgehend gleich, nur kleine Anpassungen an Prompts/Labels)
+# *** FIX: Added/Renamed graph keys ***
 translations = {
     'en': {
         'page_title': "Advanced DSO Finder",
@@ -199,7 +199,7 @@ translations = {
         'results_list_header': "Result List",
         'results_export_name': "Name",
         'results_export_type': "Type",
-        'results_export_constellation': "Constellation", # NEU
+        'results_export_constellation': "Constellation",
         'results_export_mag': "Magnitude",
         'results_export_ra': "RA",
         'results_export_dec': "Dec",
@@ -210,29 +210,42 @@ translations = {
         'results_export_time_max_local': "Time at Max (Local TZ)",
         'results_export_cont_duration': "Max Cont. Duration (h)",
         'results_expander_title': "{} ({}) - Mag: {:.1f}",
-        'results_coords_header': "**Details:**", # Changed header
-        'results_constellation_label': "Constellation:", # NEU
+        'results_coords_header': "**Details:**",
+        'results_constellation_label': "Constellation:",
         'results_max_alt_header': "**Max. Altitude:**",
         'results_azimuth_label': "(Azimuth: {:.1f}°{})",
         'results_direction_label': ", Direction: {}",
         'results_best_time_header': "**Best Time (Local TZ):**",
         'results_cont_duration_header': "**Max. Cont. Duration:**",
         'results_duration_value': "{:.1f} hours",
-        'results_plot_button': "📈 Sky Path Plot",
-        'results_spinner_plotting': "Creating plot...",
-        'results_plot_error': "Plot Error: {}",
-        'results_plot_not_created': "Plot could not be created.",
-        'results_close_plot_button': "Close Plot",
+        'graph_type_label': "Graph Type (for all graphs):", # Renamed & Clarified scope
+        'graph_type_sky_path': "Sky Path (Az/Alt)", # Renamed
+        'graph_type_alt_time': "Altitude/Time", # Renamed
+        'results_graph_button': "📈 Show Graph", # Renamed
+        'results_spinner_plotting': "Creating graph...", # Renamed
+        'results_graph_error': "Graph Error: {}", # Renamed
+        'results_graph_not_created': "Graph could not be created.", # Renamed
+        'results_close_graph_button': "Close Graph", # Renamed
         'results_save_csv_button': "💾 Save Result List as CSV",
         'results_csv_filename': "dso_observation_list_{}.csv",
         'results_csv_export_error': "CSV Export Error: {}",
         'warning_no_objects_found': "No objects found matching all criteria for the calculated observation window.",
         'info_initial_prompt': "Welcome! Please **enter coordinates** manually or **search for a location** name to enable the main search.",
-        'plot_altitude_label': "Altitude (°)",
-        'plot_azimuth_label': "Azimuth (°)",
-        'plot_min_altitude_label': "Min. Altitude ({:.0f}°)",
-        'plot_title': "Sky Path for {}",
-        'plot_ylabel': "Altitude (°)",
+        'graph_altitude_label': "Altitude (°)",
+        'graph_azimuth_label': "Azimuth (°)",
+        'graph_min_altitude_label': "Min. Altitude ({:.0f}°)",
+        'graph_title_sky_path': "Sky Path for {}",
+        'graph_title_alt_time': "Altitude Profile for {}",
+        'graph_ylabel': "Altitude (°)",
+        'custom_target_expander': "Graph Custom Target",
+        'custom_target_ra_label': "Right Ascension (RA):",
+        'custom_target_dec_label': "Declination (Dec):",
+        'custom_target_name_label': "Target Name (Optional):",
+        'custom_target_ra_placeholder': "e.g., 10:45:03.6 or 161.265",
+        'custom_target_dec_placeholder': "e.g., -16:42:58 or -16.716",
+        'custom_target_button': "Generate Custom Graph",
+        'custom_target_error_coords': "Invalid RA/Dec format. Use HH:MM:SS.s / DD:MM:SS or decimal degrees.",
+        'custom_target_error_window': "Cannot generate graph. Ensure location is set and observation window is calculated (click 'Find Observable Objects' first if needed).",
         'error_processing_object': "Error processing {}: {}",
         'window_calc_error': "Error calculating observation window: {}\n{}",
         'window_fallback_info': "\nUsing fallback window: {} to {} UTC",
@@ -339,7 +352,7 @@ translations = {
         'results_list_header': "Ergebnisliste",
         'results_export_name': "Name",
         'results_export_type': "Typ",
-        'results_export_constellation': "Sternbild", # NEU
+        'results_export_constellation': "Sternbild",
         'results_export_mag': "Magnitude",
         'results_export_ra': "RA",
         'results_export_dec': "Dec",
@@ -349,32 +362,43 @@ translations = {
         'results_export_time_max_utc': "Zeit bei Max (UTC)",
         'results_export_time_max_local': "Zeit bei Max (Lokale ZZ)",
         'results_export_cont_duration': "Max. kont. Dauer (h)",
-        # 'results_export_total_duration': "Gesamtdauer (h)", # Removed
         'results_expander_title': "{} ({}) - Mag: {:.1f}",
-        'results_coords_header': "**Details:**", # Changed header
-        'results_constellation_label': "Sternbild:", # NEU
+        'results_coords_header': "**Details:**",
+        'results_constellation_label': "Sternbild:",
         'results_max_alt_header': "**Max. Höhe:**",
         'results_azimuth_label': "(Azimut: {:.1f}°{})",
         'results_direction_label': ", Richtung: {}",
         'results_best_time_header': "**Beste Zeit (Lokale ZZ):**",
         'results_cont_duration_header': "**Max. kont. Dauer:**",
-        # 'results_total_duration_header': "**Gesamtdauer:**", # Removed
         'results_duration_value': "{:.1f} Stunden",
-        'results_plot_button': "📈 Himmelsbahn Plot",
-        'results_spinner_plotting': "Erstelle Plot...",
-        'results_plot_error': "Plot Fehler: {}",
-        'results_plot_not_created': "Plot konnte nicht erstellt werden.",
-        'results_close_plot_button': "Plot schliessen",
+        'graph_type_label': "Grafik-Typ (für alle Grafiken):", # Renamed & Clarified scope
+        'graph_type_sky_path': "Himmelsbahn (Az/Alt)", # Renamed
+        'graph_type_alt_time': "Höhenverlauf (Alt/Zeit)", # Renamed
+        'results_graph_button': "📈 Grafik anzeigen", # Renamed
+        'results_spinner_plotting': "Erstelle Grafik...", # Renamed
+        'results_graph_error': "Grafik Fehler: {}", # Renamed
+        'results_graph_not_created': "Grafik konnte nicht erstellt werden.", # Renamed
+        'results_close_graph_button': "Grafik schliessen", # Renamed
         'results_save_csv_button': "💾 Ergebnisliste als CSV speichern",
         'results_csv_filename': "dso_beobachtungsliste_{}.csv",
         'results_csv_export_error': "CSV Export Fehler: {}",
         'warning_no_objects_found': "Keine Objekte gefunden, die allen Kriterien für das berechnete Beobachtungsfenster entsprechen.",
         'info_initial_prompt': "Willkommen! Bitte **Koordinaten eingeben** oder **Ort suchen**, um die Objektsuche zu aktivieren.",
-        'plot_altitude_label': "Höhe (°)",
-        'plot_azimuth_label': "Azimut (°)",
-        'plot_min_altitude_label': "Mindesthöhe ({:.0f}°)",
-        'plot_title': "Himmelsbahn für {}",
-        'plot_ylabel': "Höhe (°)",
+        'graph_altitude_label': "Höhe (°)",
+        'graph_azimuth_label': "Azimut (°)",
+        'graph_min_altitude_label': "Mindesthöhe ({:.0f}°)",
+        'graph_title_sky_path': "Himmelsbahn für {}",
+        'graph_title_alt_time': "Höhenverlauf für {}",
+        'graph_ylabel': "Höhe (°)",
+        'custom_target_expander': "Eigenes Ziel grafisch darstellen", # NEU
+        'custom_target_ra_label': "Rektaszension (RA):", # NEU
+        'custom_target_dec_label': "Deklination (Dec):", # NEU
+        'custom_target_name_label': "Ziel-Name (Optional):", # NEU
+        'custom_target_ra_placeholder': "z.B. 10:45:03.6 oder 161.265", # NEU
+        'custom_target_dec_placeholder': "z.B. -16:42:58 oder -16.716", # NEU
+        'custom_target_button': "Eigene Grafik erstellen", # NEU
+        'custom_target_error_coords': "Ungültiges RA/Dec Format. Verwende HH:MM:SS.s / DD:MM:SS oder Dezimalgrad.", # NEU
+        'custom_target_error_window': "Grafik kann nicht erstellt werden. Stelle sicher, dass Ort und Zeitfenster gültig sind (ggf. zuerst 'Beobachtbare Objekte finden' klicken).", # NEU
         'error_processing_object': "Fehler bei Verarbeitung von {}: {}",
         'window_calc_error': "Fehler bei der Berechnung des Beobachtungsfensters: {}\n{}",
         'window_fallback_info': "\nVerwende Fallback-Fenster: {} bis {} UTC",
@@ -481,7 +505,7 @@ translations = {
         'results_list_header': "Liste des Résultats",
         'results_export_name': "Nom",
         'results_export_type': "Type",
-        'results_export_constellation': "Constellation", # NEU
+        'results_export_constellation': "Constellation",
         'results_export_mag': "Magnitude",
         'results_export_ra': "AD",
         'results_export_dec': "Dec",
@@ -491,32 +515,43 @@ translations = {
         'results_export_time_max_utc': "Heure au Max (UTC)",
         'results_export_time_max_local': "Heure au Max (FH Local)",
         'results_export_cont_duration': "Durée Cont. Max (h)",
-        # 'results_export_total_duration': "Durée Totale (h)", # Removed
         'results_expander_title': "{} ({}) - Mag : {:.1f}",
-        'results_coords_header': "**Détails :**", # Changed header
-        'results_constellation_label': "Constellation :", # NEU
+        'results_coords_header': "**Détails :**",
+        'results_constellation_label': "Constellation :",
         'results_max_alt_header': "**Altitude Max. :**",
         'results_azimuth_label': "(Azimut : {:.1f}°{})",
         'results_direction_label': ", Direction : {}",
         'results_best_time_header': "**Meilleure Heure (FH Local) :**",
         'results_cont_duration_header': "**Durée Cont. Max. :**",
-        # 'results_total_duration_header': "**Durée Totale :**", # Removed
         'results_duration_value': "{:.1f} heures",
-        'results_plot_button': "📈 Tracé Céleste",
+        'graph_type_label': "Type de Graphique (pour tous) :", # Clarified scope
+        'graph_type_sky_path': "Tracé Céleste (Az/Alt)",
+        'graph_type_alt_time': "Altitude/Temps",
+        'results_graph_button': "📈 Afficher le graphique",
         'results_spinner_plotting': "Création du graphique...",
-        'results_plot_error': "Erreur du graphique : {}",
-        'results_plot_not_created': "Le graphique n'a pas pu être créé.",
-        'results_close_plot_button': "Fermer le graphique",
+        'results_graph_error': "Erreur du graphique : {}",
+        'results_graph_not_created': "Le graphique n'a pas pu être créé.",
+        'results_close_graph_button': "Fermer le graphique",
         'results_save_csv_button': "💾 Enregistrer la liste en CSV",
         'results_csv_filename': "dso_liste_observation_{}.csv",
         'results_csv_export_error': "Erreur d'exportation CSV : {}",
         'warning_no_objects_found': "Aucun objet trouvé correspondant à tous les critères pour la fenêtre d'observation calculée.",
         'info_initial_prompt': "Bienvenue ! Veuillez **entrer des coordonnées** manuellement ou **rechercher un nom de lieu** pour activer la recherche principale.",
-        'plot_altitude_label': "Altitude (°)",
-        'plot_azimuth_label': "Azimut (°)",
-        'plot_min_altitude_label': "Altitude Min. ({:.0f}°)",
-        'plot_title': "Tracé Céleste pour {}",
-        'plot_ylabel': "Altitude (°)",
+        'graph_altitude_label': "Altitude (°)",
+        'graph_azimuth_label': "Azimut (°)",
+        'graph_min_altitude_label': "Altitude Min. ({:.0f}°)",
+        'graph_title_sky_path': "Tracé Céleste pour {}",
+        'graph_title_alt_time': "Profil d'Altitude pour {}",
+        'graph_ylabel': "Altitude (°)",
+        'custom_target_expander': "Tracer une cible personnalisée", # NEU
+        'custom_target_ra_label': "Ascension Droite (AD) :", # NEU
+        'custom_target_dec_label': "Déclinaison (Dec) :", # NEU
+        'custom_target_name_label': "Nom de la cible (Optionnel) :", # NEU
+        'custom_target_ra_placeholder': "ex : 10:45:03.6 ou 161.265", # NEU
+        'custom_target_dec_placeholder': "ex : -16:42:58 ou -16.716", # NEU
+        'custom_target_button': "Générer le graphique personnalisé", # NEU
+        'custom_target_error_coords': "Format AD/Dec invalide. Utilisez HH:MM:SS.s / DD:MM:SS ou degrés décimaux.", # NEU
+        'custom_target_error_window': "Impossible de générer le graphique. Assurez-vous que le lieu est défini et que la fenêtre d'observation est calculée (cliquez sur 'Trouver les Objets Observables' si nécessaire).", # NEU
         'error_processing_object': "Erreur lors du traitement de {}: {}",
         'window_calc_error': "Erreur lors du calcul de la fenêtre d'observation : {}\n{}",
         'window_fallback_info': "\nUtilisation de la fenêtre de repli : {} à {} UTC",
@@ -569,8 +604,9 @@ def initialize_session_state():
     """Initializes all required session state keys if they don't exist."""
     defaults = {
         'language': 'en',
-        'plot_object_name': None,
-        'show_plot': False,
+        'plot_object_name': None, # Name of the object whose plot is shown from results
+        'show_plot': False, # Flag to show plot from results list
+        'active_result_plot_data': None, # Data for the currently shown result plot
         'last_results': [],
         'find_button_pressed': False,
         # Location related state
@@ -594,8 +630,17 @@ def initialize_session_state():
         'moon_phase_slider': 35, # Store slider values directly
         'sort_method': 'Duration & Altitude',
         'selected_peak_direction': ALL_DIRECTIONS_KEY, # Internal key ('All', 'N', etc.)
+        # Plot state
+        'plot_type_selection': 'Sky Path', # Default plot type
+        # Custom Target State
+        'custom_target_ra': "",
+        'custom_target_dec': "",
+        'custom_target_name': "",
+        'custom_target_error': "",
+        'custom_target_plot_data': None, # Stores data needed to replot custom target
+        'show_custom_plot': False, # Flag to show custom plot area
         # Other state
-        'expanded_object_name': None,
+        'expanded_object_name': None, # Tracks which result expander is open
     }
     for key, default_value in defaults.items():
         if key not in st.session_state:
@@ -642,11 +687,12 @@ def get_observable_window(observer: 'Observer', reference_time: 'Time', is_now: 
 
     # Define the time for calculation (use noon for specific date, now otherwise)
     calc_time = reference_time
-    # Ensure reference_time is timezone-aware (UTC) for astroplan consistency if needed
-    # if reference_time.datetime.tzinfo is None:
-    #      reference_time = Time(reference_time.datetime.replace(tzinfo=timezone.utc))
 
     try:
+        # Ensure observer object is valid
+        if not isinstance(observer, Observer):
+             raise TypeError(f"Expected astroplan.Observer, got {type(observer)}")
+
         # Find the next evening astronomical twilight
         # *** FIX: Removed horizon argument ***
         astro_set = observer.twilight_evening_astronomical(calc_time, which='next')
@@ -758,7 +804,7 @@ def find_observable_objects(
     for index, row in df_catalog.iterrows():
         name = row['Name']; ra_str = row['RA_str']; dec_str = row['Dec_str']
         mag = row['Mag']; obj_type = row['Type']
-        # Constellation is now fetched using astropy below
+        # Constellation is fetched using astropy below
 
         # --- Apply Filters ---
         if selected_object_types and obj_type not in selected_object_types: continue
@@ -791,6 +837,8 @@ def find_observable_objects(
                 peak_time = observing_times[peak_in_window_index]
 
                 # --- Calculate Max Continuous Duration (within the dark window) ---
+                # This duration represents how long the object is continuously above
+                # min_altitude_limit *during the calculated observation window*.
                 max_cont_duration_hours = 0.0
                 if time_step_duration > 0:
                     # Find breaks in consecutive indices (where difference > 1)
@@ -844,9 +892,61 @@ def create_moon_phase_svg(illumination_fraction: float, size: int = 80) -> str:
     </svg>"""
     return svg
 
+# --- Plot Function: Altitude vs Time ---
+# Renamed from original plot_altitude
+def plot_altitude_time(_obj_data: dict, _location_tuple: tuple, lang: str, tz_name: str):
+    """Creates a Matplotlib Altitude vs Time graph."""
+    t = translations[lang]
+    if plt is None or mdates is None or pytz is None:
+        st.error("Plotting libraries (matplotlib, pytz) not available.")
+        return None
+
+    fig, ax = plt.subplots()
+    try:
+        times = Time(_obj_data['times_jd'], format='jd')
+        altitudes = _obj_data['altitudes']
+        min_alt_limit = _obj_data['min_alt_limit']
+
+        # --- Timezone Conversion for X-axis ---
+        try:
+            selected_tz = pytz.timezone(tz_name)
+            times_local_dt = [t_inst.to_datetime(timezone=selected_tz) for t_inst in times]
+            xlabel = f"Time ({tz_name})" # Use the actual tz_name used
+        except Exception as tz_err:
+             print(f"Timezone conversion/lookup error in graph for '{tz_name}': {tz_err}. Falling back to UTC.")
+             times_local_dt = times.datetime # Use UTC datetime objects
+             xlabel = "Time (UTC)"
+
+        # --- Plotting Data ---
+        ax.plot(times_local_dt, altitudes, label=t['graph_altitude_label'], color='#00C0F0') # Cyan line
+        ax.axhline(min_alt_limit, color='#FF6347', linestyle='--', label=t['graph_min_altitude_label'].format(min_alt_limit)) # Tomato color
+
+        # --- Axis Setup ---
+        ax.set_ylim(0, 90)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(t['graph_ylabel'])
+        ax.set_title(t['graph_title_alt_time'].format(_obj_data['name'])) # Specific title
+        ax.legend()
+        ax.grid(True, linestyle=':', linewidth=0.5, color='#666666')
+
+        # --- Formatting X-axis ---
+        xfmt = mdates.DateFormatter('%H:%M')
+        ax.xaxis.set_major_formatter(xfmt)
+        ax.xaxis.set_major_locator(mdates.HourLocator(interval=1)) # Tick every hour
+        plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
+        plt.tight_layout()
+
+    except Exception as e:
+        print(f"Error plotting altitude/time for {_obj_data.get('name', 'Unknown')}: {e}")
+        st.error(t['results_graph_error'].format(e)) # Show error in UI
+        plt.close(fig) # Ensure figure is closed on error
+        return None
+    return fig
+
+
 # --- Updated Plot Function for Azimuth vs Altitude ---
 def plot_sky_path(_obj_data: dict, _location_tuple: tuple, lang: str, tz_name: str):
-    """Creates a Matplotlib Azimuth vs Altitude plot with time markers."""
+    """Creates a Matplotlib Azimuth vs Altitude graph with time markers."""
     t = translations[lang]
     if plt is None or mdates is None or pytz is None:
         st.error("Plotting libraries (matplotlib, pytz) not available.")
@@ -877,7 +977,7 @@ def plot_sky_path(_obj_data: dict, _location_tuple: tuple, lang: str, tz_name: s
             selected_tz = pytz.timezone(tz_name)
             times_local_dt = [t_inst.to_datetime(timezone=selected_tz) for t_inst in plot_times]
         except Exception as tz_err:
-             print(f"Timezone conversion/lookup error in plot for '{tz_name}': {tz_err}. Using UTC for markers.")
+             print(f"Timezone conversion/lookup error in graph for '{tz_name}': {tz_err}. Using UTC for markers.")
              # Fallback to UTC datetimes if conversion fails
              times_local_dt = [t_inst.to_datetime(timezone=timezone.utc) for t_inst in plot_times]
              tz_name = "UTC" # Ensure label reflects fallback
@@ -907,12 +1007,12 @@ def plot_sky_path(_obj_data: dict, _location_tuple: tuple, lang: str, tz_name: s
                 last_hour = current_hour
 
         # Add minimum altitude line
-        ax.axhline(min_alt_limit, color='#FF6347', linestyle='--', label=t['plot_min_altitude_label'].format(min_alt_limit)) # Tomato color
+        ax.axhline(min_alt_limit, color='#FF6347', linestyle='--', label=t['graph_min_altitude_label'].format(min_alt_limit)) # Tomato color
 
         # --- Axis Setup ---
-        ax.set_xlabel(t['plot_azimuth_label'])
-        ax.set_ylabel(t['plot_altitude_label'])
-        ax.set_title(t['plot_title'].format(_obj_data['name']))
+        ax.set_xlabel(t['graph_azimuth_label'])
+        ax.set_ylabel(t['graph_altitude_label'])
+        ax.set_title(t['graph_title_sky_path'].format(_obj_data['name'])) # Specific title
         ax.set_xlim(0, 360)
         ax.set_ylim(0, 90)
 
@@ -926,7 +1026,7 @@ def plot_sky_path(_obj_data: dict, _location_tuple: tuple, lang: str, tz_name: s
 
     except Exception as e:
         print(f"Error plotting sky path for {_obj_data.get('name', 'Unknown')}: {e}")
-        st.error(t['results_plot_error'].format(e))
+        st.error(t['results_graph_error'].format(e)) # Use renamed key
         plt.close(fig) # Ensure figure is closed on error
         return None
     return fig
@@ -1500,13 +1600,161 @@ else: st.warning("Moon phase calculation disabled: 'astroplan' library not found
 
 st.markdown("---")
 
+# --- Custom Target Plotter ---
+with st.expander(t['custom_target_expander']):
+    col_ra, col_dec, col_name = st.columns(3)
+    with col_ra:
+        st.text_input(t['custom_target_ra_label'], key='custom_target_ra', placeholder=t['custom_target_ra_placeholder'])
+    with col_dec:
+        st.text_input(t['custom_target_dec_label'], key='custom_target_dec', placeholder=t['custom_target_dec_placeholder'])
+    with col_name:
+        st.text_input(t['custom_target_name_label'], key='custom_target_name', placeholder="e.g., M42")
+
+    custom_target_button_pressed = st.button(t['custom_target_button'])
+    custom_target_error_placeholder = st.empty() # For errors specific to this section
+
+    if custom_target_button_pressed:
+        st.session_state.custom_target_error = "" # Clear previous errors
+        st.session_state.custom_target_plot_data = None # Clear previous custom plot data
+        st.session_state.show_custom_plot = False # Hide plot area initially
+
+        custom_ra_str = st.session_state.custom_target_ra
+        custom_dec_str = st.session_state.custom_target_dec
+        custom_name = st.session_state.custom_target_name or "Custom Target"
+
+        if not custom_ra_str or not custom_dec_str:
+            st.session_state.custom_target_error = "RA and Dec cannot be empty."
+        elif not location_is_valid_for_run:
+            st.session_state.custom_target_error = t['custom_target_error_window']
+        else:
+            try:
+                # Validate/Parse RA/Dec
+                # Try parsing as sexagesimal first, then decimal
+                try:
+                    custom_target_coord = SkyCoord(ra=custom_ra_str, dec=custom_dec_str, unit=(u.hourangle, u.deg))
+                except ValueError:
+                    custom_target_coord = SkyCoord(ra=custom_ra_str, dec=custom_dec_str, unit=(u.deg, u.deg))
+
+                # Get current observation window
+                # Recalculate window based on current settings to be sure
+                start_time, end_time, window_msg = get_observable_window(current_location_for_run, reference_time, is_time_now, lang)
+
+                if start_time and end_time and start_time < end_time:
+                    time_delta_hours = (end_time - start_time).to(u.hour).value
+                    num_time_steps = max(30, int(time_delta_hours * 12))
+                    observing_times = Time(np.linspace(start_time.jd, end_time.jd, num_time_steps), format='jd', scale='utc')
+
+                    # Calculate Alt/Az path
+                    altaz_frame = AltAz(obstime=observing_times, location=current_location_for_run.location)
+                    target_altaz = custom_target_coord.transform_to(altaz_frame)
+
+                    # Prepare data for plotting function and store in state
+                    st.session_state.custom_target_plot_data = {
+                        "name": custom_name,
+                        "times_jd": observing_times.jd,
+                        "altitudes": target_altaz.alt.to(u.deg).value,
+                        "azimuths": target_altaz.az.to(u.deg).value,
+                        "min_alt_limit": st.session_state.min_alt_slider # Use current slider value
+                    }
+                    st.session_state.show_custom_plot = True # Set flag to show plot area
+                    st.session_state.show_plot = False # Hide main results plot if shown
+                    st.session_state.expanded_object_name = None # Collapse main results
+                    st.session_state.active_result_plot_data = None # Clear active result plot data
+                    st.session_state.plot_object_name = None
+
+                else: # No valid window
+                     st.session_state.custom_target_error = window_msg or t['error_no_window']
+
+            except ValueError as e:
+                st.session_state.custom_target_error = f"{t['custom_target_error_coords']} ({e})"
+            except Exception as e:
+                st.session_state.custom_target_error = f"Error calculating custom target path: {e}"
+                st.exception(e) # Print full traceback for debugging
+
+        # Display error if any occurred
+        if st.session_state.custom_target_error:
+             custom_target_error_placeholder.error(st.session_state.custom_target_error)
+        else:
+             custom_target_error_placeholder.empty() # Clear placeholder if successful
+             # Use rerun to ensure the plot area below updates immediately after button press
+             st.rerun()
+
+
+# --- Global Plot Type Selector (Moved outside results list) ---
+st.markdown("---") # Separator
+plot_type_options = {
+    'Sky Path': t['graph_type_sky_path'],
+    'Altitude/Time': t['graph_type_alt_time']
+}
+# Ensure current selection is valid, default to Sky Path
+if st.session_state.plot_type_selection not in plot_type_options:
+    st.session_state.plot_type_selection = 'Sky Path'
+
+st.radio(
+    t['graph_type_label'], # Use renamed key
+    options=list(plot_type_options.keys()),
+    format_func=lambda key: plot_type_options[key],
+    key='plot_type_selection', # Update state directly
+    horizontal=True
+)
+# This radio button changing will trigger a rerun, updating the visible plot below
+
+
+# --- Generate and Store Active Plot Figure (Custom or Result) ---
+# This section runs on every rerun, including when the radio button changes
+active_plot_fig = None # Initialize fig variable for this run
+plot_data_to_use = None
+plot_func = plot_sky_path if st.session_state.plot_type_selection == 'Sky Path' else plot_altitude_time
+
+# Determine which data to use for plotting (custom or result)
+if st.session_state.show_custom_plot and st.session_state.custom_target_plot_data is not None:
+    plot_data_to_use = st.session_state.custom_target_plot_data
+elif st.session_state.show_plot and st.session_state.active_result_plot_data is not None:
+    plot_data_to_use = st.session_state.active_result_plot_data
+
+# Generate the plot if data is available
+if plot_data_to_use is not None:
+    location_tuple = (
+        current_location_for_run.location.lat.deg,
+        current_location_for_run.location.lon.deg,
+        current_location_for_run.location.height.value
+    ) if current_location_for_run else None
+
+    if plt and plot_func and location_tuple:
+        # No spinner here, as it runs on every interaction with the radio button
+        active_plot_fig = plot_func(
+            plot_data_to_use,
+            location_tuple,
+            lang,
+            st.session_state.selected_timezone
+        )
+
+
+# --- Display Custom Target Plot Area ---
+custom_plot_area = st.container() # Container to hold the custom plot
+if st.session_state.show_custom_plot:
+    with custom_plot_area:
+        if active_plot_fig:
+            st.pyplot(active_plot_fig)
+            if st.button(t['results_close_graph_button'], key="close_custom_graph", type="secondary"):
+                st.session_state.show_custom_plot = False
+                st.session_state.custom_target_plot_data = None
+                st.rerun() # Rerun to clear the plot
+        else:
+            # Handle case where plot generation failed but should be shown
+            st.warning(t['results_graph_not_created'])
+
+
 # --- Main Search Button & Logic ---
 find_disabled = not location_is_valid_for_run or df_catalog_data is None or df_catalog_data.empty
 if st.button(t['find_button_label'], key="find_button", type="primary", use_container_width=True, disabled=find_disabled):
 
     st.session_state.expanded_object_name = None
-    st.session_state.show_plot = False
+    st.session_state.show_plot = False # Hide result plot area
     st.session_state.plot_object_name = None
+    st.session_state.active_result_plot_data = None # Clear active result plot data
+    st.session_state.show_custom_plot = False # Hide custom plot area
+    st.session_state.custom_target_plot_data = None # Clear custom plot data
 
     # Re-check conditions (redundant with disabled state but safe)
     if not location_is_valid_for_run:
@@ -1631,6 +1879,8 @@ if st.button(t['find_button_label'], key="find_button", type="primary", use_cont
 if st.session_state.last_results:
     st.markdown("---")
     st.subheader(t['results_list_header'])
+    # Graph Type Selector is now above this section
+
     export_data = []
 
     for i, obj in enumerate(st.session_state.last_results):
@@ -1679,50 +1929,29 @@ if st.session_state.last_results:
 
             plot_button_key = f"plot_btn_{obj['name']}_{i}"
             close_button_key = f"close_plot_{obj['name']}_{i}"
-            # Call the new plot function
-            if st.button(t['results_plot_button'], key=plot_button_key):
+            # Button to trigger plot generation/display
+            if st.button(t['results_graph_button'], key=plot_button_key):
                 st.session_state.plot_object_name = obj['name']
                 st.session_state.show_plot = True
                 st.session_state.expanded_object_name = obj['name']
+                st.session_state.active_result_plot_data = obj # Store data for replotting
+                st.session_state.show_custom_plot = False # Hide custom plot if shown
+                st.session_state.custom_target_plot_data = None
                 st.rerun()
 
+            # Display area for the result plot (figure is generated above the loop now)
             if st.session_state.show_plot and st.session_state.plot_object_name == obj['name']:
-                 # Use plot_sky_path instead of plot_altitude
-                 if plt and plot_sky_path:
-                     with st.spinner(t['results_spinner_plotting']):
-                         try:
-                             location_tuple = None
-                             # Check if the location used for the run is valid before plotting
-                             # Use the .location attribute of the Observer object
-                             if current_location_for_run is not None and isinstance(current_location_for_run.location, EarthLocation):
-                                 location_tuple = (
-                                     current_location_for_run.location.lat.deg,
-                                     current_location_for_run.location.lon.deg,
-                                     current_location_for_run.location.height.value
-                                 )
-
-                             # Explicit check for None before plotting
-                             if location_tuple is not None:
-                                 # Pass the correct timezone from session state
-                                 fig = plot_sky_path(obj, location_tuple, lang, st.session_state.selected_timezone)
-                                 if fig:
-                                     st.pyplot(fig)
-                                     if st.button(t['results_close_plot_button'], key=close_button_key, type="secondary"):
-                                         st.session_state.show_plot = False
-                                         st.session_state.plot_object_name = None
-                                         st.rerun()
-                                 else:
-                                     st.warning(t['results_plot_not_created'])
-                                     st.session_state.show_plot = False; st.session_state.plot_object_name = None;
-                             else:
-                                  st.error("Location information missing or invalid for plotting.")
-                                  st.session_state.show_plot = False; st.session_state.plot_object_name = None;
-                         except Exception as plot_e:
-                             st.error(t['results_plot_error'].format(plot_e))
-                             st.session_state.show_plot = False; st.session_state.plot_object_name = None;
+                 if active_plot_fig: # Check if figure was generated successfully
+                     st.pyplot(active_plot_fig)
+                     if st.button(t['results_close_graph_button'], key=close_button_key, type="secondary"):
+                         st.session_state.show_plot = False
+                         st.session_state.plot_object_name = None
+                         st.session_state.active_result_plot_data = None
+                         # No need to clear active_plot_fig here, it's regenerated on rerun if needed
+                         st.rerun()
                  else:
-                      st.warning("Plotting skipped: Matplotlib or other required library missing.")
-                      st.session_state.show_plot = False; st.session_state.plot_object_name = None;
+                     # Show error if plot failed but should be shown
+                     st.warning(t['results_graph_not_created'])
 
 
     # --- CSV Export Button ---
