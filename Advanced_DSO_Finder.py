@@ -43,12 +43,22 @@ except ImportError as e:
 try:
     import pandas as pd
     import matplotlib.pyplot as plt
+    import matplotlib.dates as mdates # Import for date formatting
     if plt: # Set style only if import succeeded
         plt.style.use('dark_background')
 except ImportError as e:
     import_errors.append(f"Error: Required library not found. Install: pip install pandas matplotlib ({e})")
     pd = None
     plt = None
+    mdates = None # Define as None if matplotlib fails
+
+# Timezone Library
+try:
+    import pytz
+except ImportError as e:
+     import_errors.append(f"Error: Required timezone library not found. Install: pip install pytz ({e})")
+     pytz = None
+
 
 # --- Display Import Errors (NOW it's safe to use st.error) ---
 if import_errors:
@@ -60,7 +70,7 @@ if import_errors:
 
 # --- Check if essential classes/functions were imported ---
 essential_imports_ok = all([
-    Time, np, u, EarthLocation, SkyCoord, get_sun, AltAz, moon_illumination, pd, plt,
+    Time, np, u, EarthLocation, SkyCoord, get_sun, AltAz, moon_illumination, pd, plt, pytz, mdates
 ])
 if not essential_imports_ok:
     st.error("Stopping execution due to missing essential libraries.")
@@ -81,17 +91,18 @@ translations = {
         'location_lat_label': "Latitude (°N)",
         'location_lon_label': "Longitude (°E)",
         'location_elev_label': "Elevation (Meters)",
-        'location_manual_display': "Manual ({:.4f}, {:.4f})", # Increased precision display
+        'location_manual_display': "Manual ({:.4f}, {:.4f})",
         'location_error': "Location Error: {}",
         'location_error_fallback': "ERROR - Using Default",
         'location_error_manual_none': "Manual location fields cannot be empty.",
         'location_error_manual_search': "Cannot search: Manual location fields are invalid or empty.",
         'location_error_undefined': "Cannot search: Location is not defined.",
-        'time_expander': "⏱️ Time",
+        'time_expander': "⏱️ Time & Timezone",
         'time_select_label': "Select Time",
         'time_option_now': "Now (upcoming night)",
         'time_option_specific': "Specific Night",
         'time_date_select_label': "Select Date:",
+        'timezone_select_label': "Select Timezone:",
         'filters_expander': "✨ Filters & Conditions",
         'mag_filter_header': "**Magnitude Filter**",
         'mag_filter_method_label': "Filter Method:",
@@ -121,6 +132,7 @@ translations = {
         'search_params_header': "Search Parameters",
         'search_params_location': "📍 Location: {}",
         'search_params_time': "⏱️ Time: {}",
+        'search_params_timezone': "🌍 Timezone: {}",
         'search_params_time_now': "Upcoming night (from {} UTC)",
         'search_params_time_specific': "Night after {}",
         'search_params_filter_mag': "✨ Filter: {}",
@@ -145,12 +157,12 @@ translations = {
         'results_export_max_alt': "Max Altitude (°)",
         'results_export_az_at_max': "Azimuth at Max (°)",
         'results_export_time_max_utc': "Time at Max (UTC)",
-        'results_export_time_max_local': "Time at Max (Local)",
+        'results_export_time_max_local': "Time at Max (Selected TZ)",
         'results_expander_title': "{} ({}) - Mag: {:.1f}",
         'results_coords_header': "**Coordinates:**",
         'results_max_alt_header': "**Max. Altitude:**",
         'results_azimuth_label': "(Azimuth: {:.1f}°)",
-        'results_best_time_header': "**Best Time (Local):**",
+        'results_best_time_header': "**Best Time (Selected TZ):**",
         'results_plot_button': "📈 Altitude Plot",
         'results_spinner_plotting': "Creating plot...",
         'results_plot_error': "Plot Error: {}",
@@ -190,17 +202,18 @@ translations = {
         'location_lat_label': "Breitengrad (°N)",
         'location_lon_label': "Längengrad (°E)",
         'location_elev_label': "Höhe (Meter)",
-        'location_manual_display': "Manuell ({:.4f}, {:.4f})", # Increased precision display
+        'location_manual_display': "Manuell ({:.4f}, {:.4f})",
         'location_error': "Standort Fehler: {}",
         'location_error_fallback': "FEHLER - Nutze Standard",
         'location_error_manual_none': "Manuelle Standortfelder dürfen nicht leer sein.",
         'location_error_manual_search': "Suche nicht möglich: Manuelle Standortfelder sind ungültig oder leer.",
         'location_error_undefined': "Suche nicht möglich: Standort ist nicht definiert.",
-        'time_expander': "⏱️ Zeitpunkt",
+        'time_expander': "⏱️ Zeitpunkt & Zeitzone",
         'time_select_label': "Zeitpunkt wählen",
         'time_option_now': "Jetzt (kommende Nacht)",
         'time_option_specific': "Andere Nacht",
         'time_date_select_label': "Datum auswählen:",
+        'timezone_select_label': "Zeitzone auswählen:",
         'filters_expander': "✨ Filter & Bedingungen",
         'mag_filter_header': "**Helligkeitsfilter**",
         'mag_filter_method_label': "Filtermethode:",
@@ -230,6 +243,7 @@ translations = {
         'search_params_header': "Suchparameter",
         'search_params_location': "📍 Standort: {}",
         'search_params_time': "⏱️ Zeitpunkt: {}",
+        'search_params_timezone': "🌍 Zeitzone: {}",
         'search_params_time_now': "Kommende Nacht (ab {} UTC)",
         'search_params_time_specific': "Nacht nach dem {}",
         'search_params_filter_mag': "✨ Filter: {}",
@@ -254,12 +268,12 @@ translations = {
         'results_export_max_alt': "Max Höhe (°)",
         'results_export_az_at_max': "Azimut bei Max (°)",
         'results_export_time_max_utc': "Zeit bei Max (UTC)",
-        'results_export_time_max_local': "Zeit bei Max (Lokal)",
+        'results_export_time_max_local': "Zeit bei Max (Gewählte ZZ)",
         'results_expander_title': "{} ({}) - Mag: {:.1f}",
         'results_coords_header': "**Koordinaten:**",
         'results_max_alt_header': "**Max. Höhe:**",
         'results_azimuth_label': "(Azimut: {:.1f}°)",
-        'results_best_time_header': "**Beste Zeit (Lokal):**",
+        'results_best_time_header': "**Beste Zeit (Gewählte ZZ):**",
         'results_plot_button': "📈 Höhenverlauf",
         'results_spinner_plotting': "Erstelle Plot...",
         'results_plot_error': "Plot Fehler: {}",
@@ -295,6 +309,7 @@ DEFAULT_LAT = 47.17
 DEFAULT_LON = 8.01
 DEFAULT_HEIGHT = 550
 DEFAULT_LOCATION = EarthLocation(lat=DEFAULT_LAT * u.deg, lon=DEFAULT_LON * u.deg, height=DEFAULT_HEIGHT * u.m)
+DEFAULT_TIMEZONE = "Europe/Zurich" # Default timezone
 # DSO Catalog (Unverändert)
 DSO_CATALOG = [
     ["M1", "05h34m31.94s", "+22d00m52.2s", 8.4, "Supernova Remnant"], ["M13", "16h41m41.24s", "+36d27m35.5s", 5.8, "Globular Cluster"],
@@ -329,12 +344,13 @@ def initialize_session_state():
         'manual_lat_val': DEFAULT_LAT,
         'manual_lon_val': DEFAULT_LON,
         'manual_height_val': DEFAULT_HEIGHT,
-        'location_choice_key': 'Default', # No cookies, default to 'Default'
-        # 'cookies_loaded': False, # Removed cookie logic
+        'location_choice_key': 'Default',
         'expanded_object_name': None,
         'manual_min_mag_slider': 0.0,
         'manual_max_mag_slider': 16.0,
-        'object_type_filter_exp': [], # Initialize as empty list
+        'object_type_filter_exp': [],
+        'selected_timezone': DEFAULT_TIMEZONE,
+        'mag_filter_mode_exp': 'Bortle Scale',
     }
     for key, default_value in defaults.items():
         if key not in st.session_state:
@@ -488,35 +504,43 @@ def create_moon_phase_svg(illumination_fraction: float, size: int = 80) -> str:
     return svg
 
 # Use string literals for type hints involving potentially unimported types
-# FIX: Change decorator to @st.cache_resource, remove invalid argument
 @st.cache_resource(show_spinner=False)
-def plot_altitude(obj_data: dict, location_tuple: tuple, lang: str): # Pass location as tuple for caching
+def plot_altitude(obj_data: dict, location_tuple: tuple, lang: str, tz_name: str): # Added tz_name
     """Creates a Matplotlib altitude plot. Caches the figure object."""
     # Note: Pylance might still show errors on type hints depending on environment.
     t = translations[lang]
-    if plt is None:
-        # Cannot plot if matplotlib failed import
-        return None
+    if plt is None or mdates is None: return None # Check mdates import too
+    if pytz is None: return None
+
     fig, ax = plt.subplots()
     try:
         times = Time(obj_data['times_jd'], format='jd')
         try:
-            local_tz = datetime.now(timezone.utc).astimezone().tzinfo
-            times_local = [t_inst.to_datetime(timezone=local_tz) for t_inst in times]
-            tz_name_display = local_tz.tzname(datetime.now()) if local_tz else 'Local'
-            xlabel = t['plot_time_label_local'].format(tz_name_display)
-        except Exception:
-             local_tz = None
+            # Use the selected timezone passed as tz_name
+            selected_tz = pytz.timezone(tz_name)
+            times_local = [t_inst.to_datetime(timezone=selected_tz) for t_inst in times]
+            # Get a display name for the selected timezone
+            tz_name_display = tz_name # Use the full name for clarity
+            xlabel = t['plot_time_label_local'].format(tz_name_display) # Update label text
+        except Exception as tz_err:
+             print(f"Timezone conversion/lookup error in plot: {tz_err}") # Log error
+             # Fallback to UTC if timezone conversion fails
              times_local = times.datetime
              xlabel = t['plot_time_label_utc']
+
         ax.plot(times_local, obj_data['altitudes'], label=t['plot_altitude_label'], color='#00C0F0')
         ax.axhline(obj_data['min_alt_limit'], color='#FF4040', linestyle='--', label=t['plot_min_altitude_label'].format(obj_data["min_alt_limit"]))
         ax.set_ylim(0, 90)
-        ax.set_xlabel(xlabel)
+        ax.set_xlabel(xlabel) # Use potentially updated label
         ax.set_ylabel(t['plot_ylabel'])
         ax.set_title(t['plot_title'].format(obj_data['name']))
         ax.legend()
         ax.grid(True, linestyle=':', linewidth=0.5, color='#555555')
+
+        # FIX: Apply 24-hour time formatter to x-axis
+        xfmt = mdates.DateFormatter('%H:%M') # Use 24-hour format
+        ax.xaxis.set_major_formatter(xfmt)
+
         plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
         plt.tight_layout()
     except Exception as e:
@@ -525,24 +549,25 @@ def plot_altitude(obj_data: dict, location_tuple: tuple, lang: str): # Pass loca
         return None # Indicate error
     return fig
 
-def get_local_time_str(utc_iso_time: str) -> tuple[str, str]:
-    """Converts UTC ISO time string to local time string and timezone name."""
+# Modified to accept timezone name
+def get_local_time_str(utc_iso_time: str, tz_name: str) -> tuple[str, str]:
+    """Converts UTC ISO time string to time string in the specified timezone."""
     try:
-        local_tz = datetime.now(timezone.utc).astimezone().tzinfo
-        if Time is None: return "N/A", ""
+        # Ensure Time and pytz are available
+        if Time is None or pytz is None: return "N/A", ""
+        # Get the timezone object from the name
+        selected_tz = pytz.timezone(tz_name)
         dt_peak_utc = Time(utc_iso_time).datetime.replace(tzinfo=timezone.utc)
-        dt_peak_local = dt_peak_utc.astimezone(local_tz)
-        tz_name = local_tz.tzname(dt_peak_local) if local_tz else "Local"
+        # Convert to the selected timezone
+        dt_peak_local = dt_peak_utc.astimezone(selected_tz)
+        # Use the provided tz_name for display or get abbreviation if needed/possible
+        tz_display_name = tz_name # Or potentially selected_tz.tzname(dt_peak_local) if desired
         peak_time_local_str = dt_peak_local.strftime('%Y-%m-%d %H:%M:%S')
-    except Exception:
-        tz_name = "UTC+?"
-        try:
-            if Time is None: return "N/A", ""
-            peak_time_local = (Time(utc_iso_time) + timedelta(hours=1)).datetime
-            peak_time_local_str = peak_time_local.strftime('%Y-%m-%d %H:%M:%S')
-        except:
-            peak_time_local_str = "N/A"; tz_name = ""
-    return peak_time_local_str, tz_name
+    except Exception as e:
+        print(f"Error converting time to timezone {tz_name}: {e}") # Log error
+        tz_display_name = tz_name # Still display the intended timezone name
+        peak_time_local_str = "N/A"
+    return peak_time_local_str, tz_display_name
 
 # --- Get Current Language and Translations ---
 lang = st.session_state.language
@@ -593,69 +618,68 @@ with st.sidebar:
             'Default': t['location_option_default'].format(DEFAULT_LOCATION_NAME),
             'Manual': t['location_option_manual']
         }
-        # Use session state to remember choice within the session
-        location_choice_key = st.radio(
+        # Display radio button first
+        st.radio( # Assigns choice to st.session_state.location_choice_key
             t['location_select_label'],
             options=list(location_options_map.keys()),
             format_func=lambda key: location_options_map[key],
-            key="location_choice_key", # Use state key directly
+            key="location_choice_key",
         )
 
-        # Manual Input Fields - use session state via key
-        # FIX: Remove 'value' argument, use only 'key' as recommended by warning
-        manual_lat_input = st.number_input(
-             t['location_lat_label'],
-             min_value=-90.0, max_value=90.0, step=0.01, format="%.4f",
-             key="manual_lat_val" # Let key handle state
-        )
-        manual_lon_input = st.number_input(
-            t['location_lon_label'],
-            min_value=-180.0, max_value=180.0, step=0.01, format="%.4f",
-            key="manual_lon_val" # Let key handle state
-        )
-        manual_height_input = st.number_input(
-            t['location_elev_label'],
-            min_value=-500, step=10, format="%d",
-            key="manual_height_val" # Let key handle state
-        )
-
-        # Determine final location object, name, and validity for this run
+        # Initialize variables used later
         current_location_for_run = None
         location_is_valid_for_run = False
         location_display_name_for_run = ""
-        warning_placeholder = st.empty() # Placeholder for warnings inside expander
+        warning_placeholder = st.empty() # Placeholder remains useful
 
+        # --- Conditionally display manual inputs ---
         if st.session_state.location_choice_key == "Manual":
-            # Read values directly from session state (set by widgets via key)
+            # Display inputs ONLY if Manual is selected
+            st.number_input( # No need to assign return value, state is managed by key
+                 t['location_lat_label'], min_value=-90.0, max_value=90.0, step=0.01, format="%.4f",
+                 key="manual_lat_val" # State key is still used
+            )
+            st.number_input(
+                t['location_lon_label'], min_value=-180.0, max_value=180.0, step=0.01, format="%.4f",
+                key="manual_lon_val" # State key is still used
+            )
+            st.number_input(
+                t['location_elev_label'], min_value=-500, step=10, format="%d",
+                key="manual_height_val" # State key is still used
+            )
+
+            # --- Determine validity and location object for Manual mode ---
             lat_val = st.session_state.manual_lat_val
             lon_val = st.session_state.manual_lon_val
             height_val = st.session_state.manual_height_val
-
-            # Check if manual inputs are valid numbers
             if lat_val is None or lon_val is None or height_val is None or \
                not isinstance(lat_val, (int, float)) or \
                not isinstance(lon_val, (int, float)) or \
                not isinstance(height_val, (int, float)):
                 warning_placeholder.warning(t['location_error_manual_none'])
                 location_display_name_for_run = t['location_error_fallback']
+                location_is_valid_for_run = False # Explicitly set invalid
             else:
-                # Inputs seem valid, try creating EarthLocation
                 try:
                     current_location_for_run = EarthLocation(lat=lat_val * u.deg, lon=lon_val * u.deg, height=height_val * u.m)
                     location_display_name_for_run = t['location_manual_display'].format(lat_val, lon_val)
-                    location_is_valid_for_run = True
+                    location_is_valid_for_run = True # Valid
+                    warning_placeholder.empty() # Clear warning if valid
                 except Exception as e:
-                    # Error during EarthLocation creation (e.g., value out of range)
                     st.error(t['location_error'].format(e)) # Show error outside placeholder
                     location_display_name_for_run = t['location_error_fallback']
-                    # location_is_valid_for_run remains False
+                    location_is_valid_for_run = False # Invalid due to creation error
         else: # Default location selected
              current_location_for_run = DEFAULT_LOCATION
              location_display_name_for_run = t['location_option_default'].format(DEFAULT_LOCATION_NAME)
-             location_is_valid_for_run = True
+             location_is_valid_for_run = True # Default is always valid
+             # Clear any warning from previous manual selection
+             warning_placeholder.empty()
 
-    # --- Time Settings ---
-    with st.expander(t['time_expander']):
+
+    # --- Time & Timezone Settings ---
+    with st.expander(t['time_expander'], expanded=True): # Expand by default
+        # Time Selection
         time_options_map = {'Now': t['time_option_now'], 'Specific': t['time_option_specific']}
         time_choice_key = st.radio(
             t['time_select_label'], options=time_options_map.keys(),
@@ -671,13 +695,34 @@ with st.sidebar:
             )
             reference_time = Time(datetime.combine(selected_date, time(12, 0)))
 
+        # Timezone Selection
+        st.markdown("---") # Separator
+        common_timezones = ["UTC", "Europe/Zurich", "Europe/Berlin", "Europe/London", "America/New_York", "America/Los_Angeles", "Asia/Tokyo"]
+        # Ensure default is in the list
+        if DEFAULT_TIMEZONE not in common_timezones:
+             common_timezones.insert(0, DEFAULT_TIMEZONE)
+        # Get current index
+        try:
+            current_tz_index = common_timezones.index(st.session_state.selected_timezone)
+        except ValueError:
+            # If value in state is invalid, fallback to default
+            st.session_state.selected_timezone = DEFAULT_TIMEZONE
+            current_tz_index = common_timezones.index(DEFAULT_TIMEZONE)
+
+        selected_tz_widget = st.selectbox(
+            t['timezone_select_label'],
+            options=common_timezones,
+            index=current_tz_index,
+            key="selected_timezone" # Use state key directly
+        )
+
     # --- Filter Settings ---
     with st.expander(t['filters_expander'], expanded=True):
         # Magnitude Filter
         st.markdown(t['mag_filter_header'])
         mag_filter_options_map = {'Bortle Scale': t['mag_filter_option_bortle'], 'Manual': t['mag_filter_option_manual']}
         # Radio button to choose filter method
-        magnitude_filter_mode_key = st.radio(
+        st.radio( # Assign to state via key, don't need the return value here
             t['mag_filter_method_label'], options=mag_filter_options_map.keys(),
             format_func=lambda key: mag_filter_options_map[key],
             key="mag_filter_mode_exp", # Use state key
@@ -690,6 +735,7 @@ with st.sidebar:
         manual_max_mag_val = st.session_state.manual_max_mag_slider
 
         # --- Conditionally display widgets based on radio button choice ---
+        # Access state directly here, as it's guaranteed to be initialized
         if st.session_state.mag_filter_mode_exp == "Bortle Scale":
             bortle_val = st.slider( # Display Bortle slider
                 t['mag_filter_bortle_label'], min_value=1, max_value=9, value=5, step=1, help=t['mag_filter_bortle_help'],
@@ -734,21 +780,13 @@ with st.sidebar:
 
         effective_selected_types = []
         if all_types:
-            # Get current selection from state (guaranteed to be a list, initially [])
             current_selection_in_state = st.session_state.object_type_filter_exp
-            # Determine default: If state holds a selection, use it. Otherwise, default to all.
             default_for_widget = current_selection_in_state if current_selection_in_state else all_types
-
             selected_object_types = st.multiselect(
-                t['object_types_label'],
-                options=all_types,
-                default=default_for_widget, # Use state value or all_types
-                key="object_type_filter_exp" # State manages persistence
+                t['object_types_label'], options=all_types,
+                default=default_for_widget, key="object_type_filter_exp"
             )
-            # Ensure widget result is a list before proceeding (Safety Check)
-            if selected_object_types is None:
-                selected_object_types = []
-            # Determine list used for filtering
+            if selected_object_types is None: selected_object_types = []
             effective_selected_types = selected_object_types if selected_object_types else all_types
         else:
              st.info("No object types found in catalog to filter.")
@@ -794,20 +832,26 @@ if st.button(t['find_button_label'], key="find_button"):
         # Display search parameters used
         with st.container(border=True):
              st.subheader(t['search_params_header'])
-             col1, col2 = st.columns(2)
+             col1, col2, col3 = st.columns(3) # Use 3 columns
              with col1:
                  st.info(t['search_params_location'].format(location_display_name_for_run))
+             with col2:
                  date_str_display = reference_time.datetime.date().strftime('%Y-%m-%d')
                  time_info = t['search_params_time_now'].format(reference_time.to_datetime(timezone.utc).strftime('%Y-%m-%d %H:%M %Z')) if is_time_now else t['search_params_time_specific'].format(date_str_display)
                  st.info(t['search_params_time'].format(time_info))
-             with col2:
+                 # Display selected timezone
+                 st.info(t['search_params_timezone'].format(st.session_state.selected_timezone))
+             with col3:
                  # Read filter values directly from state for display/use
+                 # Use the mode selected via the radio button's key
+                 magnitude_filter_mode_disp = st.session_state.mag_filter_mode_exp
                  min_mag_disp = st.session_state.manual_min_mag_slider
                  max_mag_disp = st.session_state.manual_max_mag_slider
-                 if magnitude_filter_mode_key == "Bortle Scale":
+                 if magnitude_filter_mode_disp == "Bortle Scale":
+                     # Read bortle value used in calculation (might be default if slider not shown)
                      mag_limit_display = get_magnitude_limit(bortle_val)
                      mag_info = t['search_params_filter_mag_bortle'].format(bortle_val, mag_limit_display)
-                 else:
+                 else: # Manual
                      mag_info = t['search_params_filter_mag_manual'].format(min_mag_disp, max_mag_disp)
                  st.info(t['search_params_filter_mag'].format(mag_info))
                  types_display = t['search_params_types_all'] if not effective_selected_types or len(effective_selected_types) == len(all_types) else ', '.join(effective_selected_types)
@@ -834,11 +878,13 @@ if st.button(t['find_button_label'], key="find_button"):
                     num_time_steps = max(30, int(time_delta_hours * 10))
                     observing_times = Time(np.linspace(start_time.jd, end_time.jd, num_time_steps), format='jd')
                     # Read filter values directly from state for calculation
+                    # Use the mode selected via the radio button's key
+                    magnitude_filter_mode_calc = st.session_state.mag_filter_mode_exp
                     min_mag_calc = st.session_state.manual_min_mag_slider
                     max_mag_calc = st.session_state.manual_max_mag_slider
                     all_found_objects = find_observable_objects(
                         current_location_for_run, observing_times, min_altitude_limit,
-                        magnitude_filter_mode_key, bortle_val, min_mag_calc, max_mag_calc,
+                        magnitude_filter_mode_calc, bortle_val, min_mag_calc, max_mag_calc,
                         effective_selected_types, lang
                     )
                 else:
@@ -880,13 +926,15 @@ if st.session_state.last_results:
     export_data = []
 
     for i, obj in enumerate(st.session_state.last_results):
-        peak_time_local_str, tz_name = get_local_time_str(obj['peak_time_utc'])
+        # Pass selected timezone name to conversion function
+        peak_time_local_str, tz_display_name = get_local_time_str(obj['peak_time_utc'], st.session_state.selected_timezone)
         export_data.append({
             t['results_export_name']: obj['name'], t['results_export_type']: obj['type'],
             t['results_export_mag']: obj['magnitude'], t['results_export_ra']: obj['ra'],
             t['results_export_dec']: obj['dec'], t['results_export_max_alt']: f"{obj['peak_alt']:.1f}",
             t['results_export_az_at_max']: f"{obj['peak_az']:.1f}", t['results_export_time_max_utc']: obj['peak_time_utc'],
-            t['results_export_time_max_local']: f"{peak_time_local_str} {tz_name}"
+            # Use the converted time and display name
+            t['results_export_time_max_local']: f"{peak_time_local_str} ({tz_display_name})"
         })
         expander_title = t['results_expander_title'].format(obj['name'], obj['type'], obj['magnitude'])
         is_expanded = (st.session_state.expanded_object_name == obj['name'])
@@ -894,7 +942,7 @@ if st.session_state.last_results:
             col1, col2, col3 = st.columns(3)
             with col1: st.markdown(t['results_coords_header']); st.markdown(f"RA: {obj['ra']}"); st.markdown(f"Dec: {obj['dec']}")
             with col2: st.markdown(t['results_max_alt_header']); st.markdown(f"**{obj['peak_alt']:.1f}°**"); st.markdown(t['results_azimuth_label'].format(obj['peak_az']))
-            with col3: st.markdown(t['results_best_time_header']); st.markdown(f"**{peak_time_local_str}**"); st.markdown(f"({tz_name})")
+            with col3: st.markdown(t['results_best_time_header']); st.markdown(f"**{peak_time_local_str}**"); st.markdown(f"({tz_display_name})") # Use display name
             st.markdown("---")
 
             # Plotting Logic
@@ -910,7 +958,6 @@ if st.session_state.last_results:
                  if plt and plot_altitude:
                     with st.spinner(t['results_spinner_plotting']):
                         try:
-                            # Pass location tuple for caching compatibility
                             location_tuple = None
                             # FIX: Use 'is not None' for EarthLocation check
                             if current_location_for_run is not None:
@@ -919,28 +966,23 @@ if st.session_state.last_results:
                                     current_location_for_run.lon.deg,
                                     current_location_for_run.height.value
                                 )
-
                             if location_tuple:
-                                # Call the cached function
-                                fig = plot_altitude(obj, location_tuple, lang)
+                                # Call the cached function, passing selected timezone name
+                                fig = plot_altitude(obj, location_tuple, lang, st.session_state.selected_timezone)
                                 if fig:
-                                    # Display the cached figure object
-                                    st.pyplot(fig)
+                                    st.pyplot(fig) # Display the cached figure object
                                     if st.button(t['results_close_plot_button'], key=close_button_key, type="secondary"):
                                         st.session_state.show_plot = False
                                         st.session_state.plot_object_name = None
                                         st.session_state.expanded_object_name = None
                                         st.rerun()
                                 else:
-                                    # Handle case where plot_altitude failed (returned None)
                                     st.warning(t['results_plot_not_created'])
                                     st.session_state.show_plot = False; st.session_state.plot_object_name = None; st.session_state.expanded_object_name = None
                             else:
-                                 st.error("Location not defined for plotting.") # Should not happen if button logic is correct
-
+                                 st.error("Location not defined for plotting.")
                         except Exception as plot_e:
                             st.error(t['results_plot_error'].format(plot_e))
-                            # Reset state on plotting error
                             st.session_state.show_plot = False; st.session_state.plot_object_name = None; st.session_state.expanded_object_name = None
                  else:
                       st.warning("Plotting skipped: Matplotlib library missing.")
