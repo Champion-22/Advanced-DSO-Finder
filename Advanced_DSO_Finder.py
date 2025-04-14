@@ -65,10 +65,10 @@ except ImportError as e:
 # Geopy für Ortsuche
 try:
     from geopy.geocoders import Nominatim
-    from geopy.exc import GeocoderTimedOut, GeocoderServiceError
+    from geopy.exc import GeocoderTimedOut, GeocoderServiceError, GeocoderQueryError
 except ImportError as e:
     import_errors.append(f"Error: Required geocoding library not found. Install: pip install geopy ({e})")
-    Nominatim = None; GeocoderTimedOut = None; GeocoderServiceError = None
+    Nominatim = None; GeocoderTimedOut = None; GeocoderServiceError = None; GeocoderQueryError = None
 
 # TimezoneFinder für automatische Zeitzone
 try:
@@ -89,7 +89,7 @@ if import_errors:
 # --- Check if essential classes/functions were imported ---
 essential_imports_ok = all([
     Time, np, u, EarthLocation, SkyCoord, get_sun, AltAz, moon_illumination, pd, plt, pytz, mdates,
-    Nominatim, # Geopy
+    Nominatim, GeocoderTimedOut, GeocoderServiceError, GeocoderQueryError, # Geopy essentials
     TimezoneFinder, # TimezoneFinder
     Observer, AtNightConstraint, # Astroplan
     get_constellation # Astropy constellation function
@@ -116,6 +116,8 @@ translations = {
         'location_search_coords': "Lat: {:.4f}, Lon: {:.4f}",
         'location_search_error_not_found': "Location not found. Try a more specific name.",
         'location_search_error_service': "Geocoding service error: {}",
+        'location_search_error_timeout': "Geocoding service timed out. Please try again.", # Added
+        'location_search_error_refused': "Geocoding connection refused. Server busy or IP blocked? Check User-Agent/Rate Limits.", # Added Specific
         'location_lat_label': "Latitude (°N)",
         'location_lon_label': "Longitude (°E)",
         'location_elev_label': "Elevation (Meters)",
@@ -189,6 +191,7 @@ translations = {
         'spinner_searching': "Calculating window & searching objects...",
         'spinner_geocoding': "Searching for location...",
         'window_info_template': "Observation window: {} to {} UTC (Astronomical Twilight)", # Updated template
+        'window_already_passed': "Calculated night window has already passed for 'Now'. Calculating for next night.", # Added
         'error_no_window': "No valid astronomical darkness window found for the selected date and location.", # More specific
         'error_polar_night': "Astronomical darkness persists for >24h (polar night?). Using fallback window.", # NEU
         'error_polar_day': "No astronomical darkness occurs (polar day?). Using fallback window.", # NEU
@@ -254,7 +257,7 @@ translations = {
         'info_catalog_loaded': "Catalog loaded: {} objects.",
         'warning_catalog_empty': "Catalog file loaded, but no suitable objects found after filtering.",
      },
-    'de': {
+     'de': {
         'page_title': "Erweiterter DSO Finder",
         'settings_header': "Einstellungen",
         'language_select_label': "Sprache / Language / Langue",
@@ -269,6 +272,8 @@ translations = {
         'location_search_coords': "Breite: {:.4f}, Länge: {:.4f}",
         'location_search_error_not_found': "Ort nicht gefunden. Versuche einen spezifischeren Namen.",
         'location_search_error_service': "Fehler beim Geocoding-Dienst: {}",
+        'location_search_error_timeout': "Zeitüberschreitung beim Geocoding-Dienst. Bitte erneut versuchen.", # Added
+        'location_search_error_refused': "Geocoding-Verbindung abgelehnt. Server ausgelastet oder IP blockiert? User-Agent/Rate-Limits prüfen.", # Added Specific
         'location_lat_label': "Breitengrad (°N)",
         'location_lon_label': "Längengrad (°E)",
         'location_elev_label': "Höhe (Meter)",
@@ -342,6 +347,7 @@ translations = {
         'spinner_searching': "Berechne Fenster & suche Objekte...",
         'spinner_geocoding': "Suche nach Ort...",
         'window_info_template': "Beobachtungsfenster: {} bis {} UTC (Astronomische Dämmerung)", # Updated template
+        'window_already_passed': "Berechnetes Nachtfenster für 'Jetzt' liegt in der Vergangenheit. Berechne für die nächste Nacht.", # Added
         'error_no_window': "Kein gültiges astronomisches Dämmerungsfenster für gewähltes Datum und Ort gefunden.", # More specific
         'error_polar_night': "Astronomische Dunkelheit dauert >24h an (Polarnacht?). Nutze Fallback-Fenster.", # NEU
         'error_polar_day': "Keine astronomische Dunkelheit vorhanden (Polartag?). Nutze Fallback-Fenster.", # NEU
@@ -422,6 +428,8 @@ translations = {
         'location_search_coords': "Lat : {:.4f}, Lon : {:.4f}",
         'location_search_error_not_found': "Lieu non trouvé. Essayez un nom plus spécifique.",
         'location_search_error_service': "Erreur du service de géocodage : {}",
+        'location_search_error_timeout': "Le service de géocodage a expiré. Veuillez réessayer.", # Added
+        'location_search_error_refused': "Connexion de géocodage refusée. Serveur occupé ou IP bloquée ? Vérifiez User-Agent/Limites de taux.", # Added Specific
         'location_lat_label': "Latitude (°N)",
         'location_lon_label': "Longitude (°E)",
         'location_elev_label': "Altitude (Mètres)",
@@ -495,6 +503,7 @@ translations = {
         'spinner_searching': "Calcul de la fenêtre & recherche d'objets...",
         'spinner_geocoding': "Recherche du lieu...",
         'window_info_template': "Fenêtre d'observation : {} à {} UTC (Crépuscule Astronomique)", # Updated template
+        'window_already_passed': "La fenêtre nocturne calculée pour 'Maintenant' est déjà passée. Calcul pour la nuit suivante.", # Added
         'error_no_window': "Aucune fenêtre d'obscurité astronomique valide trouvée pour la date et le lieu sélectionnés.", # More specific
         'error_polar_night': "L'obscurité astronomique persiste >24h (nuit polaire ?). Utilisation de la fenêtre de repli.", # NEU
         'error_polar_day': "Aucune obscurité astronomique (jour polaire ?). Utilisation de la fenêtre de repli.", # NEU
@@ -563,17 +572,19 @@ translations = {
 }
 
 # --- Global Configuration & Initial Values ---
-INITIAL_LAT = 47.17
+INITIAL_LAT = 47.17 # Default to Schötz, Switzerland
 INITIAL_LON = 8.01
 INITIAL_HEIGHT = 550
 INITIAL_TIMEZONE = "Europe/Zurich" # Fallback if auto-detection fails initially
 
 # --- Path to Catalog File ---
 # WICHTIG: Die Katalogdatei (z.B. 'ongc.csv') muss sich im selben Verzeichnis
-#          wie dieses Python-Skript befinden, damit sie gefunden wird!
+#         wie dieses Python-Skript befinden, damit sie gefunden wird!
 try:
+    # Get the directory where the script is located
     APP_DIR = os.path.dirname(os.path.abspath(__file__))
 except NameError:
+    # Fallback for environments where __file__ is not defined (like some notebooks)
     APP_DIR = os.getcwd()
 CATALOG_FILENAME = "ongc.csv"
 CATALOG_FILEPATH = os.path.join(APP_DIR, CATALOG_FILENAME)
@@ -591,9 +602,12 @@ def get_timezone_finder():
     if TimezoneFinder:
         try:
             # Use try_load=True for potential lazy loading if supported by the library version
+            # in_memory=True loads data into RAM for faster lookups
             return TimezoneFinder(in_memory=True)
         except Exception as e:
+            # Catch potential errors during initialization (e.g., data file issues)
             print(f"Error initializing TimezoneFinder: {e}")
+            st.warning(f"TimezoneFinder init failed: {e}. Automatic timezone detection disabled.")
             return None
     return None
 
@@ -603,7 +617,7 @@ tf = get_timezone_finder()
 def initialize_session_state():
     """Initializes all required session state keys if they don't exist."""
     defaults = {
-        'language': 'en',
+        'language': 'de', # Default to German
         'plot_object_name': None, # Name of the object whose plot is shown from results
         'show_plot': False, # Flag to show plot from results list
         'active_result_plot_data': None, # Data for the currently shown result plot
@@ -614,7 +628,7 @@ def initialize_session_state():
         'manual_lat_val': INITIAL_LAT,
         'manual_lon_val': INITIAL_LON,
         'manual_height_val': INITIAL_HEIGHT,
-        'location_search_query': "",
+        'location_search_query': "Schötz", # Pre-fill with user's location
         'searched_location_name': None,
         'location_search_status_msg': "",
         'location_search_success': False,
@@ -649,98 +663,132 @@ def initialize_session_state():
 # --- Helper Functions ---
 def get_magnitude_limit(bortle_scale: int) -> float:
     """Calculates the approximate limiting magnitude based on Bortle scale."""
+    # These are approximate values, can be adjusted
     limits = {1: 15.5, 2: 15.5, 3: 14.5, 4: 14.5, 5: 13.5, 6: 12.5, 7: 11.5, 8: 10.5, 9: 9.5}
-    return limits.get(bortle_scale, 9.5)
+    return limits.get(bortle_scale, 9.5) # Default to worst case if scale is invalid
 
 def azimuth_to_direction(azimuth_deg: float) -> str:
     """Converts an azimuth angle (degrees) to a cardinal direction string."""
-    azimuth_deg = azimuth_deg % 360 # Ensure angle is within 0-360
+    # Ensure angle is within 0-360 degrees
+    azimuth_deg = azimuth_deg % 360
+    # Calculate the index (0=N, 1=NE, 2=E, ..., 7=NW)
     index = round(azimuth_deg / 45) % 8
     return CARDINAL_DIRECTIONS[index]
 
 def _get_fallback_window(reference_time: 'Time') -> tuple['Time', 'Time']:
-    """Provides a default observation window (e.g., 9 PM to 3 AM local time) in UTC."""
+    """
+    Provides a default observation window (e.g., 9 PM to 3 AM local time) in UTC.
+    Tries to estimate local time based on system time, falls back to a fixed offset.
+    """
     try:
+        # Try getting local timezone info from the system where the script runs
         local_tz = datetime.now(timezone.utc).astimezone().tzinfo
         dt_ref = reference_time.datetime
-        utc_offset_seconds = local_tz.utcoffset(dt_ref).total_seconds() if local_tz and local_tz.utcoffset(dt_ref) is not None else 3600
+        # Get the UTC offset for the reference time in the local timezone
+        utc_offset_seconds = local_tz.utcoffset(dt_ref).total_seconds() if local_tz and local_tz.utcoffset(dt_ref) is not None else 3600 # Default to +1 hour offset
         utc_offset_hours = utc_offset_seconds / 3600
     except Exception:
-        utc_offset_hours = 1 # Fallback offset (e.g., CET)
+        # Fallback if local timezone detection fails
+        utc_offset_hours = 1 # e.g., CET offset
 
+    # Define start/end times in local time for the night *of* the reference_time date
     start_date = reference_time.datetime.date()
-    local_dt_start = datetime.combine(start_date, time(21, 0)) # 9 PM local
-    local_dt_end = datetime.combine(start_date + timedelta(days=1), time(3, 0)) # 3 AM local next day
+    local_dt_start = datetime.combine(start_date, time(21, 0)) # 9 PM local time on the reference date
+    local_dt_end = datetime.combine(start_date + timedelta(days=1), time(3, 0)) # 3 AM local time the *next* morning
+
+    # Convert local start/end times to UTC using the calculated offset
     start_time_utc = Time(local_dt_start - timedelta(hours=utc_offset_hours))
     end_time_utc = Time(local_dt_end - timedelta(hours=utc_offset_hours))
+
+    # Ensure the window is in the future relative to the reference time if needed
+    # (This logic might need refinement depending on how reference_time is used)
     if end_time_utc < reference_time:
-          start_time_utc += timedelta(days=1)
-          end_time_utc += timedelta(days=1)
+         start_time_utc += timedelta(days=1)
+         end_time_utc += timedelta(days=1)
+
     return start_time_utc, end_time_utc
 
 # --- Updated Observation Window Calculation using Astroplan ---
 def get_observable_window(observer: 'Observer', reference_time: 'Time', is_now: bool, lang: str) -> tuple['Time' | None, 'Time' | None, str]:
-    """Calculates the astronomical twilight window using astroplan."""
+    """
+    Calculates the astronomical twilight window using astroplan.
+    Handles 'now' logic and potential polar conditions.
+    """
     t = translations[lang]
     status_message = ""
     start_time, end_time = None, None
+    current_utc_time = Time.now() # Get current time once
 
-    # Define the time for calculation (use noon for specific date, now otherwise)
+    # Define the time for calculation
+    # For 'Specific Night', use noon UTC on that day to avoid ambiguity near midnight
+    # For 'Now', use the actual current time
     calc_time = reference_time
+    if not is_now:
+        # Combine selected date with noon UTC
+        calc_time = Time(datetime.combine(reference_time.datetime.date(), time(12, 0)), scale='utc')
+
 
     try:
         # Ensure observer object is valid
         if not isinstance(observer, Observer):
-             raise TypeError(f"Expected astroplan.Observer, got {type(observer)}")
+            raise TypeError(f"Internal Error: Expected astroplan.Observer, got {type(observer)}")
 
-        # Find the next evening astronomical twilight
-        # *** FIX: Removed horizon argument ***
+        # Find the next evening astronomical twilight (-18 deg) starting from calc_time
         astro_set = observer.twilight_evening_astronomical(calc_time, which='next')
 
-        # Find the next morning astronomical twilight *after* the evening twilight
-        # *** FIX: Removed horizon argument ***
+        # Find the next morning astronomical twilight (-18 deg) *after* the evening twilight
         astro_rise = observer.twilight_morning_astronomical(astro_set, which='next')
 
-        # Check if calculated times are valid
+        # Basic validation of calculated times
         if astro_set is None or astro_rise is None or astro_rise <= astro_set:
-             # This might happen in polar regions or if calculation fails
-             raise ValueError("Could not determine valid twilight times.")
+            # This can happen in polar regions or if calculations fail unexpectedly
+             raise ValueError("Could not determine valid twilight times (set or rise invalid/order wrong).")
 
+        # --- Initial Window Set ---
         start_time = astro_set
         end_time = astro_rise
 
         # --- Adjust window based on 'is_now' ---
-        current_utc_time = Time.now()
-        if is_now and start_time < current_utc_time:
-            start_time = current_utc_time
+        if is_now:
+            # If the calculated start time is in the past, adjust start to now
+            if start_time < current_utc_time:
+                start_time = current_utc_time
 
-        # If the entire calculated window has passed for 'Now', calculate for the next night
-        if is_now and end_time < current_utc_time:
-            status_message = t['window_already_passed'] + "\n"
-            # Recalculate for the next day's midnight
-            return get_observable_window(observer, current_utc_time + timedelta(days=1), True, lang)
+            # If the entire calculated window has passed for 'Now', calculate for the next night
+            if end_time < current_utc_time:
+                status_message = t['window_already_passed'] + "\n"
+                # Recalculate starting from noon tomorrow UTC
+                next_day_noon = Time(datetime.combine(current_utc_time.datetime.date() + timedelta(days=1), time(12, 0)), scale='utc')
+                # Recursive call - ensure this doesn't lead to infinite loops in edge cases
+                return get_observable_window(observer, next_day_noon, False, lang) # Treat as specific date for next day
 
-        # Format times for status message
+        # Format times for status message *after* adjustments
         start_fmt = start_time.to_datetime(timezone.utc).strftime('%Y-%m-%d %H:%M %Z')
         end_fmt = end_time.to_datetime(timezone.utc).strftime('%Y-%m-%d %H:%M %Z')
         status_message += t['window_info_template'].format(start_fmt, end_fmt)
 
     except ValueError as ve: # Catch specific astroplan errors or our ValueError
         # Handle cases where twilight events might not occur (polar day/night)
-        # Check if sun is always up or always down
         try:
-            # Check using -18 deg horizon for astronomical night
-            is_currently_night = observer.is_night(reference_time, horizon=-18*u.deg)
-            if is_currently_night: # Check if it's currently dark
-                # Potentially polar night (sun never rises high enough)
-                status_message = t['error_polar_night']
-            else:
-                # Potentially polar day (sun never sets low enough)
-                 status_message = t['error_polar_day']
-        except Exception as check_e: # Error during is_night check
-             print(f"Error checking is_night: {check_e}")
-             status_message = t['window_calc_error'].format(ve, "") # Show original error
+            # Check if sun is always up (-18 deg horizon) or always down around the reference time
+            sun_alt_ref = observer.altaz(reference_time, observer.sun).alt
+            sun_alt_12h_later = observer.altaz(reference_time + 12*u.hour, observer.sun).alt
 
+            if sun_alt_ref < -18*u.deg and sun_alt_12h_later < -18*u.deg:
+                 # Potentially polar night (sun stays below -18 deg)
+                 status_message = t['error_polar_night']
+            elif sun_alt_ref > -18*u.deg and sun_alt_12h_later > -18*u.deg:
+                 # Potentially polar day (sun stays above -18 deg)
+                 status_message = t['error_polar_day']
+            else:
+                 # Other ValueError, use generic message
+                 status_message = t['window_calc_error'].format(ve, traceback.format_exc())
+
+        except Exception as check_e: # Error during sun altitude check
+            print(f"Error checking sun altitude for polar conditions: {check_e}")
+            status_message = t['window_calc_error'].format(ve, traceback.format_exc()) # Show original error
+
+        # Use fallback window if calculation failed
         print(f"Astroplan ValueError calculating window: {ve}")
         start_time, end_time = _get_fallback_window(reference_time)
         status_message += t['window_fallback_info'].format(start_time.iso, end_time.iso)
@@ -755,10 +803,12 @@ def get_observable_window(observer: 'Observer', reference_time: 'Time', is_now: 
     if start_time is None or end_time is None or end_time <= start_time:
         if not status_message or "Error" not in status_message: # Add error if not already present
              status_message += "\n" + t['error_no_window']
-        # Ensure fallback is used if times are invalid
-        start_time, end_time = _get_fallback_window(reference_time)
-        if "fallback" not in status_message.lower(): # Avoid duplicate fallback message
-            status_message += t['window_fallback_info'].format(start_time.iso, end_time.iso)
+        # Ensure fallback is used if times are invalid after all checks
+        start_time_fb, end_time_fb = _get_fallback_window(reference_time)
+        if start_time is None or start_time != start_time_fb: # Avoid duplicate fallback message
+            status_message += t['window_fallback_info'].format(start_time_fb.iso, end_time_fb.iso)
+        start_time, end_time = start_time_fb, end_time_fb
+
 
     return start_time, end_time, status_message
 
@@ -784,43 +834,54 @@ def find_observable_objects(
     magnitude_limit = None
     MAX_REALISTIC_NIGHT_DURATION = 16.0 # Hours, simple cap for duration display
 
-    # Determine magnitude limit
+    # Determine magnitude limit based on filter mode
     if magnitude_filter_mode == 'Bortle Scale':
         magnitude_limit = get_magnitude_limit(bortle_scale)
     elif magnitude_filter_mode == 'Manual':
+        # Ensure min/max are valid numbers and in correct order
         is_min_valid = isinstance(manual_min_mag, (int, float))
         is_max_valid = isinstance(manual_max_mag, (int, float))
         if is_min_valid and is_max_valid:
             if manual_min_mag > manual_max_mag:
+                # Swap if min > max
                 manual_min_mag, manual_max_mag = manual_max_mag, manual_min_mag
         else:
+            # If either is invalid, disable manual magnitude filter
              manual_min_mag = None; manual_max_mag = None
 
-    # Pre-calculate AltAz frame
+    # Pre-calculate AltAz frame for the entire observation window
     altaz_frame = AltAz(obstime=observing_times, location=location)
     # Calculate time step duration in hours for duration calculation
+    # Handle case with only one time step (or zero)
     time_step_duration = (observing_times[1] - observing_times[0]).to(u.hour).value if len(observing_times) > 1 else 0
 
+    # Iterate through the pre-filtered catalog DataFrame
     for index, row in df_catalog.iterrows():
+        # Extract object data from the row
         name = row['Name']; ra_str = row['RA_str']; dec_str = row['Dec_str']
         mag = row['Mag']; obj_type = row['Type']
-        # Constellation is fetched using astropy below
+        # Constellation will be fetched using astropy's get_constellation
 
         # --- Apply Filters ---
+        # Filter by object type if a selection is made
         if selected_object_types and obj_type not in selected_object_types: continue
-        if not isinstance(mag, (int, float)): continue
+        # Filter by magnitude (ensure magnitude is a valid number)
+        if not isinstance(mag, (int, float)): continue # Skip if magnitude is not numeric
         if magnitude_filter_mode == 'Bortle Scale':
             if magnitude_limit is not None and mag > magnitude_limit: continue
         elif magnitude_filter_mode == 'Manual':
             if manual_min_mag is not None and manual_max_mag is not None:
+                # Apply manual range filter
                 if not (manual_min_mag <= mag <= manual_max_mag): continue
 
         # --- Calculate Observability ---
         try:
+            # Create SkyCoord object for the target
             target = SkyCoord(ra=ra_str, dec=dec_str, frame='icrs', unit=(u.hourangle, u.deg))
             # Get full constellation name using astropy
             constellation_full = get_constellation(target)
 
+            # Transform target coordinates to AltAz frame for the entire window
             target_altaz = target.transform_to(altaz_frame)
             altitudes = target_altaz.alt
             azimuths = target_altaz.az
@@ -828,19 +889,20 @@ def find_observable_objects(
             # Find indices where object is above minimum altitude *within the observing_times array*
             valid_indices = np.where(altitudes >= min_altitude_limit)[0]
 
+            # If the object is ever above the minimum altitude during the window
             if len(valid_indices) > 0:
-                # Find peak altitude within the valid period
+                # Find peak altitude within the valid period (indices where it's above min alt)
                 peak_in_window_index = valid_indices[np.argmax(altitudes[valid_indices])]
                 peak_alt_val = altitudes[peak_in_window_index].to(u.deg).value
                 peak_az_val = azimuths[peak_in_window_index].to(u.deg).value
                 peak_direction = azimuth_to_direction(peak_az_val)
-                peak_time = observing_times[peak_in_window_index]
+                peak_time = observing_times[peak_in_window_index] # Time of peak altitude
 
                 # --- Calculate Max Continuous Duration (within the dark window) ---
                 # This duration represents how long the object is continuously above
                 # min_altitude_limit *during the calculated observation window*.
                 max_cont_duration_hours = 0.0
-                if time_step_duration > 0:
+                if time_step_duration > 0 and len(valid_indices) > 1:
                     # Find breaks in consecutive indices (where difference > 1)
                     diffs = np.diff(valid_indices)
                     splits = np.where(diffs > 1)[0] + 1
@@ -850,42 +912,63 @@ def find_observable_objects(
                         block_len = len(block)
                         if block_len > 1:
                             # Duration = time of last point in block - time of first point in block
-                            duration = observing_times[block[-1]] - observing_times[block[0]]
-                            # Add one time step to account for the duration of the last interval
-                            current_block_duration_hours = duration.to(u.hour).value + time_step_duration
+                            # Add one time step to account for the duration *of* the last interval itself
+                            duration = (observing_times[block[-1]] - observing_times[block[0]]).to(u.hour).value + time_step_duration
                         elif block_len == 1:
-                             # Single point visibility, duration is approx one time step
-                             current_block_duration_hours = time_step_duration
-                        else: # Empty block
-                            current_block_duration_hours = 0.0
-                        # Keep track of the longest single block
-                        max_cont_duration_hours = max(max_cont_duration_hours, current_block_duration_hours)
+                            # Single point visibility, duration is approx one time step
+                            duration = time_step_duration
+                        else: # Empty block (shouldn't happen with split logic)
+                            duration = 0.0
+                        # Keep track of the longest single block duration
+                        max_cont_duration_hours = max(max_cont_duration_hours, duration)
+                elif len(valid_indices) == 1 and time_step_duration > 0:
+                     # Exactly one point above limit
+                     max_cont_duration_hours = time_step_duration
 
-                # Apply a cap to prevent unrealistically long durations (e.g., >16h)
+
+                # Apply a cap to prevent unrealistically long durations (e.g., >16h for circumpolar)
                 capped_max_cont_duration = min(max_cont_duration_hours, MAX_REALISTIC_NIGHT_DURATION)
 
+                # Append object data to results list
                 observable_objects.append({
                     "name": name, "type": obj_type, "magnitude": mag,
-                    "constellation": constellation_full, # Use full name
-                    "ra_str": ra_str, "dec_str": dec_str,
-                    "ra": target.ra.to_string(unit=u.hour, sep='hms', precision=1),
-                    "dec": target.dec.to_string(unit=u.deg, sep='dms', precision=0),
-                    "peak_alt": peak_alt_val, "peak_az": peak_az_val, "peak_direction": peak_direction,
-                    "peak_time_utc": peak_time.iso,
-                    "cont_duration_hours": capped_max_cont_duration, # Use capped value
-                    "times_jd": observing_times.jd, "altitudes": altitudes.to(u.deg).value,
-                    "azimuths": azimuths.to(u.deg).value, "min_alt_limit": min_altitude_limit.value
+                    "constellation": constellation_full, # Use full name from get_constellation
+                    "ra_str": ra_str, "dec_str": dec_str, # Keep original strings if needed
+                    "ra": target.ra.to_string(unit=u.hour, sep='hms', precision=1), # Formatted RA
+                    "dec": target.dec.to_string(unit=u.deg, sep='dms', precision=0), # Formatted Dec
+                    "peak_alt": peak_alt_val,
+                    "peak_az": peak_az_val,
+                    "peak_direction": peak_direction,
+                    "peak_time_utc": peak_time.iso, # Peak time in UTC ISO format
+                    "cont_duration_hours": capped_max_cont_duration, # Use capped continuous duration
+                    # Store data needed for plotting
+                    "times_jd": observing_times.jd,
+                    "altitudes": altitudes.to(u.deg).value,
+                    "azimuths": azimuths.to(u.deg).value,
+                    "min_alt_limit": min_altitude_limit.value
                 })
-        except ValueError: pass # Skip objects with invalid coordinates
-        except Exception as e: st.warning(t['error_processing_object'].format(name, e))
+        except ValueError as coord_err:
+            # Skip objects with invalid coordinates in the catalog
+            # print(f"Skipping {name}: Invalid coordinates ({ra_str}, {dec_str}) - {coord_err}")
+            pass
+        except Exception as e:
+            # Log other errors encountered during processing a specific object
+            st.warning(t['error_processing_object'].format(name, e))
+            # traceback.print_exc() # Optional: print full traceback to console for debugging
+
     return observable_objects
 
 def create_moon_phase_svg(illumination_fraction: float, size: int = 80) -> str:
-    """Generates an SVG image for moon phase."""
+    """Generates an SVG image representing the moon phase illumination percentage."""
     percentage = illumination_fraction * 100
-    radius = size // 2 - 6; cx = cy = size // 2
-    stroke_color = "#DDDDDD"; stroke_width = 3; text_fill = "#EEEEEE"
-    font_size = size * 0.3
+    # Define SVG parameters
+    radius = size // 2 - 6 # Radius of the circle, leaving some padding
+    cx = cy = size // 2 # Center coordinates
+    stroke_color = "#DDDDDD" # Light grey stroke
+    stroke_width = 3
+    text_fill = "#EEEEEE" # Light text color
+    font_size = size * 0.3 # Adjust font size relative to overall size
+    # Create the SVG string
     svg = f"""<svg width="{size}" height="{size}" viewbox="0 0 {size} {size}" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle;">
       <circle cx="{cx}" cy="{cy}" r="{radius}" stroke="{stroke_color}" stroke-width="{stroke_width}" fill="#222222" />
       <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="{font_size}px" fill="{text_fill}" font-weight="bold">{percentage:.0f}%</text>
@@ -897,179 +980,208 @@ def create_moon_phase_svg(illumination_fraction: float, size: int = 80) -> str:
 def plot_altitude_time(_obj_data: dict, _location_tuple: tuple, lang: str, tz_name: str):
     """Creates a Matplotlib Altitude vs Time graph."""
     t = translations[lang]
+    # Check if plotting libraries are available
     if plt is None or mdates is None or pytz is None:
         st.error("Plotting libraries (matplotlib, pytz) not available.")
         return None
 
+    # Create figure and axes
     fig, ax = plt.subplots()
     try:
-        times = Time(_obj_data['times_jd'], format='jd')
+        # Extract data from the object dictionary
+        times = Time(_obj_data['times_jd'], format='jd') # Convert JD times back to Astropy Time objects
         altitudes = _obj_data['altitudes']
         min_alt_limit = _obj_data['min_alt_limit']
 
         # --- Timezone Conversion for X-axis ---
         try:
+            # Get the selected timezone object
             selected_tz = pytz.timezone(tz_name)
+            # Convert Astropy Time objects to datetime objects in the selected local timezone
             times_local_dt = [t_inst.to_datetime(timezone=selected_tz) for t_inst in times]
-            xlabel = f"Time ({tz_name})" # Use the actual tz_name used
+            xlabel = f"Time ({tz_name})" # Use the actual tz_name used for the axis label
         except Exception as tz_err:
-             print(f"Timezone conversion/lookup error in graph for '{tz_name}': {tz_err}. Falling back to UTC.")
-             times_local_dt = times.datetime # Use UTC datetime objects
-             xlabel = "Time (UTC)"
+            # Fallback to UTC if timezone conversion fails
+            print(f"Timezone conversion/lookup error in graph for '{tz_name}': {tz_err}. Falling back to UTC.")
+            times_local_dt = times.datetime # Use UTC datetime objects directly
+            xlabel = "Time (UTC)"
 
         # --- Plotting Data ---
-        ax.plot(times_local_dt, altitudes, label=t['graph_altitude_label'], color='#00C0F0') # Cyan line
-        ax.axhline(min_alt_limit, color='#FF6347', linestyle='--', label=t['graph_min_altitude_label'].format(min_alt_limit)) # Tomato color
+        # Plot altitude vs local time
+        ax.plot(times_local_dt, altitudes, label=t['graph_altitude_label'], color='#00C0F0', linewidth=2) # Cyan line
+        # Plot minimum altitude threshold line
+        ax.axhline(min_alt_limit, color='#FF6347', linestyle='--', label=t['graph_min_altitude_label'].format(min_alt_limit)) # Tomato color dashed line
 
         # --- Axis Setup ---
-        ax.set_ylim(0, 90)
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel(t['graph_ylabel'])
-        ax.set_title(t['graph_title_alt_time'].format(_obj_data['name'])) # Specific title
-        ax.legend()
-        ax.grid(True, linestyle=':', linewidth=0.5, color='#666666')
+        ax.set_ylim(0, 90) # Altitude range 0-90 degrees
+        ax.set_xlabel(xlabel) # Set x-axis label (local time or UTC)
+        ax.set_ylabel(t['graph_ylabel']) # Set y-axis label (Altitude)
+        ax.set_title(t['graph_title_alt_time'].format(_obj_data.get('name', 'Target'))) # Set graph title
+        ax.legend() # Display legend
+        ax.grid(True, linestyle=':', linewidth=0.5, color='#666666') # Add subtle grid
 
-        # --- Formatting X-axis ---
+        # --- Formatting X-axis (Time) ---
+        # Use a DateFormatter to show time as HH:MM
         xfmt = mdates.DateFormatter('%H:%M')
         ax.xaxis.set_major_formatter(xfmt)
-        ax.xaxis.set_major_locator(mdates.HourLocator(interval=1)) # Tick every hour
+        # Set major ticks to appear every hour
+        ax.xaxis.set_major_locator(mdates.HourLocator(interval=1))
+        # Rotate x-axis labels for better readability
         plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
-        plt.tight_layout()
+        plt.tight_layout() # Adjust layout to prevent labels overlapping
 
     except Exception as e:
+        # Handle any errors during plotting
         print(f"Error plotting altitude/time for {_obj_data.get('name', 'Unknown')}: {e}")
-        st.error(t['results_graph_error'].format(e)) # Show error in UI
-        plt.close(fig) # Ensure figure is closed on error
-        return None
-    return fig
+        st.error(t['results_graph_error'].format(e)) # Show error in Streamlit UI
+        plt.close(fig) # Ensure figure is closed on error to free memory
+        return None # Return None if plotting failed
+    return fig # Return the Matplotlib figure object
 
 
-# --- Updated Plot Function for Azimuth vs Altitude ---
+# --- Updated Plot Function for Azimuth vs Altitude (Sky Path) ---
 def plot_sky_path(_obj_data: dict, _location_tuple: tuple, lang: str, tz_name: str):
     """Creates a Matplotlib Azimuth vs Altitude graph with time markers."""
     t = translations[lang]
+    # Check if plotting libraries are available
     if plt is None or mdates is None or pytz is None:
         st.error("Plotting libraries (matplotlib, pytz) not available.")
         return None
 
+    # Create figure and axes
     fig, ax = plt.subplots()
     try:
-        # Extract data
-        times = Time(_obj_data['times_jd'], format='jd')
-        altitudes = _obj_data['altitudes']
-        azimuths = _obj_data['azimuths']
+        # Extract data from the object dictionary
+        times = Time(_obj_data['times_jd'], format='jd') # Convert JD times back to Astropy Time objects
+        altitudes = np.array(_obj_data['altitudes']) # Ensure numpy array for filtering
+        azimuths = np.array(_obj_data['azimuths'])   # Ensure numpy array for filtering
         min_alt_limit = _obj_data['min_alt_limit']
 
-        # Filter data to only include points above the minimum altitude
+        # Filter data to only include points *above* the minimum altitude for plotting
         valid_plot_indices = np.where(altitudes >= min_alt_limit)[0]
         if len(valid_plot_indices) == 0:
-             st.warning("Object does not rise above minimum altitude during the observation window.")
-             plt.close(fig)
-             return None
+            # If the object never rises above the limit, show a warning and don't plot
+            st.warning(f"Object '{_obj_data.get('name', 'Target')}' does not rise above {min_alt_limit}° during the observation window.")
+            plt.close(fig)
+            return None
 
+        # Select the valid data points for plotting
         plot_times = times[valid_plot_indices]
         plot_altitudes = altitudes[valid_plot_indices]
         plot_azimuths = azimuths[valid_plot_indices]
 
-        # --- Timezone Conversion for Markers ---
+        # --- Timezone Conversion for Time Markers ---
         times_local_dt = []
         try:
+            # Get the selected timezone object
             selected_tz = pytz.timezone(tz_name)
+            # Convert valid Astropy Time objects to datetime objects in the selected local timezone
             times_local_dt = [t_inst.to_datetime(timezone=selected_tz) for t_inst in plot_times]
         except Exception as tz_err:
-             print(f"Timezone conversion/lookup error in graph for '{tz_name}': {tz_err}. Using UTC for markers.")
-             # Fallback to UTC datetimes if conversion fails
-             times_local_dt = [t_inst.to_datetime(timezone=timezone.utc) for t_inst in plot_times]
-             tz_name = "UTC" # Ensure label reflects fallback
+            # Fallback to UTC if timezone conversion fails
+            print(f"Timezone conversion/lookup error in graph for '{tz_name}': {tz_err}. Using UTC for markers.")
+            times_local_dt = [t_inst.to_datetime(timezone=timezone.utc) for t_inst in plot_times]
+            tz_name = "UTC" # Ensure label reflects fallback
 
 
         # --- Plotting Data ---
-        # Use scatter plot with color mapped to azimuth (inverted)
-        # viridis_r: starts bright (low az), goes dark (high az)
+        # Use scatter plot: Azimuth (X) vs Altitude (Y)
+        # Color points based on azimuth using a reversed colormap (viridis_r)
+        # s=size, zorder=drawing order, alpha=transparency
         scatter = ax.scatter(plot_azimuths, plot_altitudes, c=plot_azimuths, cmap='viridis_r', s=25, zorder=3, alpha=0.8)
 
-        # Add a color bar for the azimuth
+        # Add a color bar to show the mapping of color to azimuth
         cbar = fig.colorbar(scatter, ax=ax, orientation='vertical', fraction=0.046, pad=0.04)
-        cbar.set_label('Azimuth (°)')
+        cbar.set_label(t['graph_azimuth_label']) # Label for the color bar
 
         # --- Add Time Markers (hourly) ---
         last_hour = -1
         for i, dt_local in enumerate(times_local_dt):
             current_hour = dt_local.hour
-            # Add marker roughly every hour (or at start/end)
-            # Mark near top of the hour (e.g., minute < 10)
+            # Add marker at the start, end, and roughly every hour (near the top of the hour)
             if i == 0 or i == len(times_local_dt) - 1 or (current_hour != last_hour and dt_local.minute < 10):
-                time_str = dt_local.strftime('%H:%M')
-                # Add text with a semi-transparent background
-                ax.text(plot_azimuths[i], plot_altitudes[i] + 0.5, time_str, fontsize=9, # Slightly offset Y
-                        ha='center', va='bottom', color='white', # White text
-                        bbox=dict(facecolor='black', alpha=0.7, pad=0.2, edgecolor='none')) # Background box
-                last_hour = current_hour
+                time_str = dt_local.strftime('%H:%M') # Format time as HH:MM
+                # Add text annotation for the time marker
+                ax.text(plot_azimuths[i], plot_altitudes[i] + 0.5, time_str, fontsize=9, # Position slightly above point
+                        ha='center', va='bottom', color='white', # White text, centered horizontally
+                        bbox=dict(facecolor='black', alpha=0.7, pad=0.2, edgecolor='none')) # Semi-transparent black background
+                last_hour = current_hour # Update last marked hour
 
         # Add minimum altitude line
-        ax.axhline(min_alt_limit, color='#FF6347', linestyle='--', label=t['graph_min_altitude_label'].format(min_alt_limit)) # Tomato color
+        ax.axhline(min_alt_limit, color='#FF6347', linestyle='--', label=t['graph_min_altitude_label'].format(min_alt_limit)) # Tomato color dashed line
 
         # --- Axis Setup ---
-        ax.set_xlabel(t['graph_azimuth_label'])
-        ax.set_ylabel(t['graph_altitude_label'])
-        ax.set_title(t['graph_title_sky_path'].format(_obj_data['name'])) # Specific title
-        ax.set_xlim(0, 360)
-        ax.set_ylim(0, 90)
+        ax.set_xlabel(t['graph_azimuth_label']) # Azimuth label
+        ax.set_ylabel(t['graph_altitude_label']) # Altitude label
+        ax.set_title(t['graph_title_sky_path'].format(_obj_data.get('name', 'Target'))) # Graph title
+        ax.set_xlim(0, 360) # Azimuth range 0-360 degrees
+        ax.set_ylim(0, 90) # Altitude range 0-90 degrees
 
-        # Add cardinal directions to X-axis
+        # Add cardinal directions (N, E, S, W) to the X-axis (Azimuth)
         ax.set_xticks([0, 90, 180, 270, 360])
         ax.set_xticklabels(['N', 'E', 'S', 'W', 'N'])
 
-        ax.legend()
-        ax.grid(True, linestyle=':', linewidth=0.5, color='#666666') # Slightly brighter grid
-        plt.tight_layout()
+        ax.legend() # Display legend
+        ax.grid(True, linestyle=':', linewidth=0.5, color='#666666') # Add subtle grid
+        plt.tight_layout() # Adjust layout
 
     except Exception as e:
+        # Handle any errors during plotting
         print(f"Error plotting sky path for {_obj_data.get('name', 'Unknown')}: {e}")
-        st.error(t['results_graph_error'].format(e)) # Use renamed key
+        st.error(t['results_graph_error'].format(e)) # Show error in Streamlit UI
         plt.close(fig) # Ensure figure is closed on error
-        return None
-    return fig
+        return None # Return None if plotting failed
+    return fig # Return the Matplotlib figure object
 
 
 def get_local_time_str(utc_iso_time: str, tz_name: str) -> tuple[str, str]:
-    """Converts UTC ISO time string to time string in the specified timezone."""
+    """Converts UTC ISO time string to a formatted time string in the specified timezone."""
     try:
+        # Check if required libraries are available
         if Time is None or pytz is None: return "N/A", ""
+        # Get the target timezone object
         selected_tz = pytz.timezone(tz_name) # tz_name should be valid here
+        # Parse the UTC ISO time string using Astropy Time, making it timezone-aware (UTC)
         dt_peak_utc = Time(utc_iso_time, format='iso', scale='utc').datetime.replace(tzinfo=timezone.utc)
+        # Convert the UTC datetime to the target local timezone
         dt_peak_local = dt_peak_utc.astimezone(selected_tz)
+        # Format the local datetime string
         peak_time_local_str = dt_peak_local.strftime('%Y-%m-%d %H:%M:%S')
-        return peak_time_local_str, tz_name
+        return peak_time_local_str, tz_name # Return formatted string and the timezone name used
     except Exception as e:
+        # Handle errors during time conversion or timezone lookup
         print(f"Error converting time {utc_iso_time} to timezone {tz_name}: {e}")
-        return "N/A", tz_name
+        return "N/A", tz_name # Return N/A on error
 
 
 # --- Data Loading Function ---
-@st.cache_data
+@st.cache_data # Cache the loaded data to avoid reloading on every interaction
 def load_ongc_data(catalog_path: str, lang: str) -> pd.DataFrame | None:
     """Loads, filters, and preprocesses data from the OpenNGC CSV file."""
     # Access translations using the provided lang argument
     t_load = translations[lang]
     # Base required columns for core functionality
     required_cols = ['Name', 'RA', 'Dec', 'Type']
-    # Optional columns for magnitude
+    # Optional columns for magnitude - will try these in order
     mag_cols = ['V-Mag', 'B-Mag', 'Mag']
-    # Constellation column is no longer loaded/used here
+    # Constellation column is no longer loaded/used here; fetched via astropy
 
     try:
+        # Check if the catalog file exists
         if not os.path.exists(catalog_path):
-             # Use translated error message
-             st.error(f"{t_load['error_loading_catalog'].split(':')[0]}: File not found at {catalog_path}")
-             st.info("Please ensure the file 'ongc.csv' is in the same directory as the Python script.")
-             return None
+            st.error(f"{t_load['error_loading_catalog'].split(':')[0]}: File not found at {catalog_path}")
+            st.info("Please ensure the file 'ongc.csv' is in the same directory as the Python script.")
+            return None
+
+        # Load the CSV file
+        # Assumes semicolon separator and '#' as comment character
+        # low_memory=False can help with mixed data types, but uses more memory
         df = pd.read_csv(catalog_path, sep=';', comment='#', low_memory=False)
 
         # --- Check for required columns ---
         missing_req_cols = [col for col in required_cols if col not in df.columns]
         if missing_req_cols:
-            st.error(f"Missing required columns in catalog: {', '.join(missing_req_cols)}")
+            st.error(f"Missing required columns in catalog '{os.path.basename(catalog_path)}': {', '.join(missing_req_cols)}")
             return None
 
         # --- Find available magnitude column ---
@@ -1077,77 +1189,99 @@ def load_ongc_data(catalog_path: str, lang: str) -> pd.DataFrame | None:
         for col in mag_cols:
             if col in df.columns:
                 mag_col_found = col
-                break
+                break # Use the first one found (V-Mag preferred, then B-Mag, then Mag)
         if mag_col_found is None:
-            st.error(f"Magnitude column ('V-Mag', 'B-Mag' or 'Mag') not found.")
+            st.error(f"Magnitude column ('V-Mag', 'B-Mag' or 'Mag') not found in catalog.")
             return None
-        df = df.rename(columns={mag_col_found: 'Mag'}) # Rename to standard 'Mag'
+        # Rename the found magnitude column to a standard 'Mag' for consistency
+        df = df.rename(columns={mag_col_found: 'Mag'})
 
         # --- Filter by Object Type ---
+        # Define a list of common DSO type identifiers found in ONGC
+        # Includes full names and abbreviations
         dso_types = ['Galaxy', 'Globular Cluster', 'Open Cluster', 'Nebula',
                      'Planetary Nebula', 'Supernova Remnant', 'HII', 'Emission Nebula',
                      'Reflection Nebula', 'Cluster + Nebula', 'Gal', 'GCl', 'Gx', 'OC',
-                     'PN', 'SNR', 'Neb', 'EmN', 'RfN', 'C+N', 'Gxy', 'AGN', 'MWSC']
+                     'PN', 'SNR', 'Neb', 'EmN', 'RfN', 'C+N', 'Gxy', 'AGN', 'MWSC', 'OCl'] # Added OCl
+        # Create a regex pattern to match any of these types (case-insensitive)
         type_pattern = '|'.join(dso_types)
+        # Filter the DataFrame, keeping rows where 'Type' column contains any of the DSO types
         df_filtered = df[df['Type'].astype(str).str.contains(type_pattern, case=False, na=False)].copy()
 
         # --- Process Magnitude ---
+        # Convert the 'Mag' column to numeric, coercing errors to NaN (Not a Number)
         df_filtered['Mag'] = pd.to_numeric(df_filtered['Mag'], errors='coerce')
+        # Drop rows where magnitude could not be converted (is NaN)
         df_filtered.dropna(subset=['Mag'], inplace=True)
 
         # --- Process Coordinates ---
+        # Ensure RA and Dec columns are strings (they should be HH:MM:SS.s / DD:MM:SS format)
         df_filtered['RA_str'] = df_filtered['RA'].astype(str)
         df_filtered['Dec_str'] = df_filtered['Dec'].astype(str)
+        # Drop rows with missing RA or Dec strings
         df_filtered.dropna(subset=['RA_str', 'Dec_str'], inplace=True)
+        # Drop rows with empty RA or Dec strings after stripping whitespace
         df_filtered = df_filtered[df_filtered['RA_str'].str.strip() != '']
         df_filtered = df_filtered[df_filtered['Dec_str'].str.strip() != '']
 
-        # --- Select Final Columns (Constellation no longer needed from CSV) ---
+        # --- Select Final Columns ---
+        # Keep only the necessary columns for the application
+        # Constellation is no longer needed from the CSV
         final_cols = ['Name', 'RA_str', 'Dec_str', 'Mag', 'Type']
 
+        # Create the final DataFrame with selected columns
         df_final = df_filtered[final_cols].copy()
+        # Drop duplicate objects based on 'Name', keeping the first occurrence
         df_final.drop_duplicates(subset=['Name'], inplace=True, keep='first')
+        # Reset the index of the final DataFrame
         df_final.reset_index(drop=True, inplace=True)
 
+        # Check if any objects remain after filtering
         if not df_final.empty:
+            # Return the processed DataFrame
             return df_final
         else:
-            # Use translated warning
+            # Show a warning if the catalog is loaded but empty after filtering
             st.warning(t_load['warning_catalog_empty'])
             return None
+
     except FileNotFoundError:
+        # Handle case where the file doesn't exist at the specified path
         st.error(f"{t_load['error_loading_catalog'].split(':')[0]}: File not found at {catalog_path}")
         st.info("Please ensure the file 'ongc.csv' is in the same directory as the Python script.")
         return None
     except pd.errors.EmptyDataError:
+        # Handle case where the CSV file is empty
         st.error(f"Catalog file is empty: {catalog_path}")
         return None
     except Exception as e:
-         # Use translated error
+        # Handle other potential errors during loading/processing
         st.error(t_load['error_loading_catalog'].format(e))
+        # Provide specific hint for common CSV parsing errors
         if "tokenizing data" in str(e):
-             st.info("This often means the wrong separator (delimiter) or inconsistent file structure. The app expects a semicolon (;) separator. Please check your 'ongc.csv' file.")
+            st.info("This often means the wrong separator (delimiter) or inconsistent file structure. The app expects a semicolon (;) separator. Please check your 'ongc.csv' file.")
         else:
-             st.info("Please check the file path, filename, and format.")
-        st.exception(e)
+            st.info("Please check the file path, filename, and format.")
+        st.exception(e) # Show full traceback in Streamlit for debugging
         return None
 
 # --- Initialize Session State ---
-# Call this *before* accessing session state
+# Call this *before* accessing session state for the first time
 initialize_session_state()
 
 # --- Get Current Language and Translations ---
 # This needs to happen *after* state initialization but *before* UI elements that use translations
 lang = st.session_state.language
-# Ensure language exists in translations, fallback to 'en'
+# Ensure language exists in translations, fallback to 'en' if needed
 if lang not in translations:
-    lang = 'en'
-    st.session_state.language = lang
-t = translations[lang]
+    lang = 'en' # Fallback to English
+    st.session_state.language = lang # Update state
+t = translations[lang] # Get the translation dictionary for the current language
 
 
 # --- Load Catalog Data ---
-# Load data after language is set, so load_ongc_data gets correct translations
+# Load data after language is set, so load_ongc_data gets correct translations for potential messages
+# The result is cached, so it only loads once unless the path or language changes
 df_catalog_data = load_ongc_data(CATALOG_FILEPATH, lang)
 
 
@@ -1155,94 +1289,108 @@ df_catalog_data = load_ongc_data(CATALOG_FILEPATH, lang)
 # Updated colors for a more modern dark theme
 st.markdown("""
 <style>
-    /* Base */
+    /* Base container styling */
     .main .block-container {
         background-color: #1a1a1a; /* Darker background */
         color: #e0e0e0; /* Slightly softer white text */
-        border-radius: 10px;
-        padding: 2rem;
+        border-radius: 10px; /* Rounded corners for the main container */
+        padding: 2rem; /* Add padding around the content */
     }
-    /* Primary Button */
+    /* Primary Button Styling (e.g., Find Objects) */
     div[data-testid="stButton"] > button:not([kind="secondary"]) {
         background-image: linear-gradient(to right, #087990, #055160); /* Teal gradient */
-        color: white;
-        border: none;
-        padding: 10px 24px;
-        text-align: center;
-        font-size: 16px;
-        margin: 4px 2px;
-        cursor: pointer;
-        border-radius: 8px;
-        transition-duration: 0.4s;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        color: white; /* White text */
+        border: none; /* No border */
+        padding: 10px 24px; /* Padding */
+        text-align: center; /* Center text */
+        font-size: 16px; /* Font size */
+        margin: 4px 2px; /* Margins */
+        cursor: pointer; /* Pointer cursor on hover */
+        border-radius: 8px; /* Rounded corners */
+        transition-duration: 0.4s; /* Smooth transition for hover effect */
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Subtle shadow */
     }
+    /* Primary Button Hover Effect */
     div[data-testid="stButton"] > button:not([kind="secondary"]):hover {
         background-image: linear-gradient(to right, #055160, #032a31); /* Darker teal on hover */
         color: white;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Larger shadow on hover */
     }
-    /* Secondary Button */
+    /* Secondary Button Styling (e.g., Close Graph) */
      div[data-testid="stButton"] > button[kind="secondary"] {
          background-color: #4a4a4a; /* Dark grey */
-         color: #e0e0e0;
-         border: 1px solid #666;
+         color: #e0e0e0; /* Light grey text */
+         border: 1px solid #666; /* Subtle border */
+         border-radius: 8px;
+         padding: 8px 18px; /* Slightly smaller padding */
      }
+     /* Secondary Button Hover Effect */
      div[data-testid="stButton"] > button[kind="secondary"]:hover {
-         background-color: #5a5a5a;
+         background-color: #5a5a5a; /* Slightly lighter grey */
          color: white;
          border: 1px solid #888;
      }
-     /* Form Submit Button (uses primary style by default, but can be customized) */
-    div[data-testid="stFormSubmitButton"] > button {
-        margin-top: 28px; /* Keep alignment */
-        /* background-image: linear-gradient(to right, #5a189a, #3c096c); */ /* Example: Purple gradient */
-    }
-    /* Expander Header */
+     /* Form Submit Button (e.g., Find Coordinates) - Inherits primary style by default */
+     div[data-testid="stFormSubmitButton"] > button {
+         margin-top: 28px; /* Keep vertical alignment with input above */
+         /* Example: Override with a different gradient if needed */
+         /* background-image: linear-gradient(to right, #5a189a, #3c096c); */
+     }
+    /* Expander Header Styling */
     .streamlit-expanderHeader {
         background-color: #282828; /* Slightly lighter dark grey */
-        color: #e0e0e0;
-        border-radius: 5px;
-        border-bottom: 1px solid #444; /* Subtle border */
+        color: #e0e0e0; /* Light text */
+        border-radius: 5px; /* Rounded corners */
+        border-bottom: 1px solid #444; /* Subtle bottom border */
     }
-    /* Metric Box */
+    /* Metric Box Styling */
     div[data-testid="stMetric"] {
         background-color: #2c2c2c; /* Consistent dark element background */
-        border-radius: 8px;
-        padding: 12px;
-        border: 1px solid #444;
+        border-radius: 8px; /* Rounded corners */
+        padding: 12px; /* Padding inside the metric box */
+        border: 1px solid #444; /* Subtle border */
     }
+    /* Metric Label Styling */
     div[data-testid="stMetric"] > div[data-testid="stMetricLabel"] {
-        color: #aaaaaa;
+        color: #aaaaaa; /* Grey color for the label */
     }
-    /* Input widgets */
+    /* Input Widgets Styling (Text, Number, Date, Selectbox) */
     div[data-testid="stTextInput"] input,
     div[data-testid="stNumberInput"] input,
     div[data-testid="stDateInput"] input,
-    div[data-testid="stSelectbox"] div[role="button"] {
-        background-color: #2c2c2c;
-        color: #e0e0e0;
-        border: 1px solid #555;
+    div[data-testid="stSelectbox"] div[role="button"],
+    div[data-testid="stMultiselect"] div[data-baseweb="select"] > div { /* Target multiselect input area */
+        background-color: #2c2c2c !important; /* Dark background */
+        color: #e0e0e0 !important; /* Light text */
+        border: 1px solid #555 !important; /* Border color */
+        border-radius: 5px; /* Rounded corners */
     }
-    /* Slider track */
+    /* Slider Track Styling */
     div[data-testid="stSlider"] div[role="slider"] {
-        background-color: #555;
+        background-color: #555; /* Dark grey track */
+    }
+    /* Slider Thumb Styling */
+    div[data-testid="stSlider"] div[data-baseweb="slider"] > div:last-child {
+        background-color: #087990; /* Teal thumb */
     }
 
 </style>
 """, unsafe_allow_html=True)
 
 # --- Title ---
-# Static English Title
+# Static English Title - avoids changing with language selection
 st.title("Advanced DSO Finder")
 
-# --- Object Type Glossary (Moved near top) ---
+# --- Object Type Glossary (Moved near top for visibility) ---
 with st.expander(t['object_type_glossary_title']):
     glossary_items = t.get('object_type_glossary', {}) # Use .get for safety
-    # Use Streamlit columns for better layout
+    # Use Streamlit columns for better layout if many items
     col1, col2 = st.columns(2)
     col_index = 0
-    sorted_items = sorted(glossary_items.items()) # Sort alphabetically by abbreviation
+    # Sort glossary items alphabetically by abbreviation for consistent order
+    sorted_items = sorted(glossary_items.items())
     for abbr, full_name in sorted_items:
+        # Distribute items between the two columns
         if col_index % 2 == 0:
             col1.markdown(f"**{abbr}:** {full_name}")
         else:
@@ -1253,14 +1401,14 @@ st.markdown("---") # Add separator after glossary
 
 # --- Sidebar ---
 with st.sidebar:
-    # Show catalog loaded message here now that translations are ready
+    # Show catalog loaded message here now that translations are ready and data loaded
     if df_catalog_data is not None and 'catalog_loaded_msg_shown' not in st.session_state:
          st.success(t['info_catalog_loaded'].format(len(df_catalog_data)))
-         st.session_state.catalog_loaded_msg_shown = True # Flag to prevent re-showing
+         st.session_state.catalog_loaded_msg_shown = True # Flag to prevent re-showing on rerun
     elif df_catalog_data is None and 'catalog_error_msg_shown' not in st.session_state:
-        # Optionally show a persistent error if loading failed
-        st.error("Catalog loading failed. Check file.")
-        st.session_state.catalog_error_msg_shown = True
+         # Optionally show a persistent error in sidebar if loading failed
+         st.error("Catalog loading failed. Check file.")
+         st.session_state.catalog_error_msg_shown = True
 
 
     st.header(t['settings_header'])
@@ -1269,339 +1417,464 @@ with st.sidebar:
     language_options = {'en': 'English', 'de': 'Deutsch', 'fr': 'Français'} # Added French
     lang_keys = list(language_options.keys())
     try:
+        # Find the index of the currently selected language
         current_lang_index = lang_keys.index(st.session_state.language)
     except ValueError:
+        # If current language in state is invalid, default to the first one (English)
         current_lang_index = 0
-        st.session_state.language = lang_keys[0] # Reset state to default if invalid
+        st.session_state.language = lang_keys[0] # Reset state to default
 
+    # Create the language selection radio button
     selected_lang_key = st.radio(
         t['language_select_label'], options=lang_keys,
-        format_func=lambda key: language_options[key], key='language_radio',
-        index=current_lang_index
+        format_func=lambda key: language_options[key], # Display full language name
+        key='language_radio', # Unique key for the widget
+        index=current_lang_index # Set the default selection
     )
-    # If language changed, update state and rerun
+    # If language changed, update state and rerun the script
     if selected_lang_key != st.session_state.language:
         st.session_state.language = selected_lang_key
         # Clear status messages that might be language-specific
         st.session_state.location_search_status_msg = ""
-        # Keep search success flag? Maybe reset it too for safety.
+        # Optionally reset other state variables if needed upon language change
         # st.session_state.location_search_success = False
-        st.rerun()
+        st.rerun() # Rerun the script immediately to apply the new language
 
     # --- Location Settings ---
-    # Location expander starts expanded
+    # Location expander starts expanded by default
     with st.expander(t['location_expander'], expanded=True):
+        # Map internal keys to translated display options
         location_options_map = {
             'Search': t['location_option_search'],
             'Manual': t['location_option_manual']
         }
+        # Ensure the current choice in state is valid
         current_choice = st.session_state.location_choice_key
         if current_choice not in location_options_map:
-            st.session_state.location_choice_key = 'Search'
+            st.session_state.location_choice_key = 'Search' # Default to Search if invalid
             current_choice = 'Search'
+        # Create the location method selection radio button
         st.radio(
             t['location_select_label'], options=list(location_options_map.keys()),
-            format_func=lambda key: location_options_map[key], key="location_choice_key"
+            format_func=lambda key: location_options_map[key], # Display translated options
+            key="location_choice_key" # Update session state directly
         )
 
         # --- Location Input Area ---
-        lat_val, lon_val, height_val = None, None, None
-        warning_placeholder = st.empty()
-        location_valid_for_tz = False
+        lat_val, lon_val, height_val = None, None, None # Initialize coordinate variables
+        warning_placeholder = st.empty() # Placeholder for manual input warnings
+        location_valid_for_tz = False # Flag to check if coordinates are valid for timezone lookup
 
+        # --- Manual Location Input ---
         if st.session_state.location_choice_key == "Manual":
-            # Use default values from state for number inputs
+            # Use default values from session state for number inputs
+            # Keys match session state keys for direct updates
             st.number_input(t['location_lat_label'], min_value=-90.0, max_value=90.0, step=0.01, format="%.4f", key="manual_lat_val")
             st.number_input(t['location_lon_label'], min_value=-180.0, max_value=180.0, step=0.01, format="%.4f", key="manual_lon_val")
             st.number_input(t['location_elev_label'], min_value=-500, step=10, format="%d", key="manual_height_val")
+            # Get current values from state
             lat_val = st.session_state.manual_lat_val
             lon_val = st.session_state.manual_lon_val
             height_val = st.session_state.manual_height_val
-            # Basic validation for manual input
+            # Basic validation for manual input: check if all are valid numbers
             if isinstance(lat_val, (int, float)) and isinstance(lon_val, (int, float)) and isinstance(height_val, (int, float)):
-                location_valid_for_tz = True
-                warning_placeholder.empty()
+                location_valid_for_tz = True # Coordinates are valid
+                warning_placeholder.empty() # Clear any previous warnings
             else:
+                # Show warning if any field is invalid/empty
                 warning_placeholder.warning(t['location_error_manual_none'])
-                location_valid_for_tz = False
+                location_valid_for_tz = False # Coordinates are invalid
 
+        # --- Location Search Input ---
         elif st.session_state.location_choice_key == "Search":
+            # Use a form for the search input and button
             with st.form("location_search_form"):
+                # Text input for location name, key matches session state
                 st.text_input(t['location_search_label'], key="location_search_query", placeholder=t['location_search_placeholder'])
+                # Form submit button
                 location_search_form_submitted = st.form_submit_button(t['location_search_submit_button'])
+            # Elevation input outside the form, but still relevant for searched locations
             st.number_input(t['location_elev_label'], min_value=-500, step=10, format="%d", key="manual_height_val")
+            # Placeholder to display search status messages (success or error)
             status_placeholder = st.empty()
 
+            # Display previous search status message if it exists
             if st.session_state.location_search_status_msg:
-                 if "Error" in st.session_state.location_search_status_msg or "Fehler" in st.session_state.location_search_status_msg or "not found" in st.session_state.location_search_status_msg or "non trouvé" in st.session_state.location_search_status_msg:
-                      status_placeholder.error(st.session_state.location_search_status_msg)
+                 if "Error" in st.session_state.location_search_status_msg or "Fehler" in st.session_state.location_search_status_msg or "not found" in st.session_state.location_search_status_msg or "non trouvé" in st.session_state.location_search_status_msg or "refused" in st.session_state.location_search_status_msg.lower() or "abgelehnt" in st.session_state.location_search_status_msg.lower():
+                     status_placeholder.error(st.session_state.location_search_status_msg)
                  else:
-                      status_placeholder.success(st.session_state.location_search_status_msg)
+                     status_placeholder.success(st.session_state.location_search_status_msg)
 
+            # Process form submission if button was clicked and query is not empty
             if location_search_form_submitted and st.session_state.location_search_query:
-                with st.spinner(t['spinner_geocoding']):
+                with st.spinner(t['spinner_geocoding']): # Show spinner during search
                     try:
-                        geolocator = Nominatim(user_agent=f"dso_finder_app_{random.randint(1000,9999)}_{datetime.now().timestamp()}")
+                        # *** FIX: Instantiate Nominatim with a unique User-Agent ***
+                        # Create a unique User-Agent string for each request
+                        # Include app name, a random element, and timestamp
+                        user_agent_str = f"AdvancedDSOFinder/{random.randint(1000,9999)}/streamlit_app_{datetime.now().timestamp()}"
+                        geolocator = Nominatim(user_agent=user_agent_str)
+
                         query = st.session_state.location_search_query
-                        location = geolocator.geocode(query, timeout=10)
+                        # Perform geocoding request with a timeout (e.g., 15 seconds)
+                        location = geolocator.geocode(query, timeout=15)
+
                         if location:
+                            # Location found successfully
                             found_lat = location.latitude; found_lon = location.longitude; found_name = location.address
+                            # Update session state with found coordinates and name
                             st.session_state.searched_location_name = found_name
                             st.session_state.location_search_success = True
-                            st.session_state.manual_lat_val = found_lat
+                            st.session_state.manual_lat_val = found_lat # Update manual fields as well
                             st.session_state.manual_lon_val = found_lon
+                            # Format success message
                             coord_str = t['location_search_coords'].format(found_lat, found_lon)
                             st.session_state.location_search_status_msg = f"{t['location_search_found'].format(found_name)}\n({coord_str})"
                             status_placeholder.success(st.session_state.location_search_status_msg)
-                            location_valid_for_tz = True
+                            location_valid_for_tz = True # Coordinates are now valid
                         else:
+                            # Location not found by Nominatim
                             st.session_state.location_search_success = False; st.session_state.searched_location_name = None
                             st.session_state.location_search_status_msg = t['location_search_error_not_found']
                             status_placeholder.error(st.session_state.location_search_status_msg)
                             location_valid_for_tz = False
-                    except (GeocoderTimedOut, GeocoderServiceError, Exception) as e:
+
+                    except GeocoderTimedOut:
+                        # Handle timeout error specifically
                         st.session_state.location_search_success = False
-                        error_type = t['location_search_error_service']
-                        if isinstance(e, GeocoderTimedOut): error_msg = error_type.format("Request timed out.")
-                        else: error_msg = error_type.format(e)
-                        st.session_state.location_search_status_msg = error_msg
+                        st.session_state.location_search_status_msg = t['location_search_error_timeout']
                         status_placeholder.error(st.session_state.location_search_status_msg)
                         location_valid_for_tz = False
+                    except GeocoderServiceError as e:
+                        # Handle other service errors, including Connection Refused
+                        st.session_state.location_search_success = False
+                        error_details = str(e)
+                        if "Connection refused" in error_details or "111" in error_details:
+                            # Specific message for connection refused
+                            st.session_state.location_search_status_msg = t['location_search_error_refused']
+                        else:
+                            # Generic service error message
+                            st.session_state.location_search_status_msg = t['location_search_error_service'].format(error_details)
+                        status_placeholder.error(st.session_state.location_search_status_msg)
+                        location_valid_for_tz = False
+                    except Exception as e:
+                         # Handle any other unexpected errors during geocoding
+                         st.session_state.location_search_success = False
+                         st.session_state.location_search_status_msg = t['location_search_error_service'].format(f"Unexpected error: {e}")
+                         status_placeholder.error(st.session_state.location_search_status_msg)
+                         location_valid_for_tz = False
+                         traceback.print_exc() # Print traceback for debugging
 
+            # If search was previously successful, use the stored coordinates
             if st.session_state.location_search_success:
                  lat_val = st.session_state.manual_lat_val
                  lon_val = st.session_state.manual_lon_val
                  height_val = st.session_state.manual_height_val
-                 # location_valid_for_tz is set inside search logic
+                 location_valid_for_tz = True # Search was successful, coords are valid
 
 
         # --- Determine Final Location and Timezone ---
-        current_location_for_run = None
-        location_is_valid_for_run = False
-        location_display_name_for_run = ""
-        auto_timezone_msg = ""
+        # This block runs regardless of Manual/Search choice, using the latest valid coordinates
+        current_location_for_run = None # Initialize observer object
+        location_is_valid_for_run = False # Flag: can we run the main DSO search?
+        location_display_name_for_run = "" # Name to show in search parameters
+        auto_timezone_msg = "" # Message about timezone detection
 
-        # Use coordinates from state (either manual or updated by search)
+        # Get current coordinates from session state (updated by Manual or Search)
         current_lat = st.session_state.manual_lat_val
         current_lon = st.session_state.manual_lon_val
         current_height = st.session_state.manual_height_val
 
-        # Validate coordinates before creating EarthLocation and finding timezone
+        # Validate coordinates before creating Observer and finding timezone
         if isinstance(current_lat, (int, float)) and isinstance(current_lon, (int, float)) and isinstance(current_height, (int, float)):
             try:
-                # Use astroplan.Observer which holds the EarthLocation
+                # Create astroplan Observer object (holds EarthLocation)
                 current_location_for_run = Observer(latitude=current_lat * u.deg, longitude=current_lon * u.deg, elevation=current_height * u.m)
-                location_is_valid_for_run = True # Valid Observer created
+                location_is_valid_for_run = True # Valid Observer created, can run main search
 
-                # Determine display name
+                # Determine display name based on how location was set
                 if st.session_state.location_choice_key == "Manual":
                     location_display_name_for_run = t['location_manual_display'].format(current_lat, current_lon)
                 elif st.session_state.location_choice_key == "Search" and st.session_state.location_search_success:
+                    # Use the successfully searched name (truncated if too long)
                     name_val = st.session_state.searched_location_name
                     display_name_short = (name_val[:35] + '...') if name_val and len(name_val) > 38 else name_val
                     location_display_name_for_run = t['location_search_display'].format(display_name_short or "Found", current_lat, current_lon)
-                else: # Search mode, but no success yet
+                else: # Search mode selected, but no successful search yet
                     location_display_name_for_run = "Pending Search"
                     location_is_valid_for_run = False # Cannot run main search without successful location search
 
                 # --- Automatic Timezone Detection ---
-                if tf and location_is_valid_for_run: # Only run if location is valid
+                # Only run if TimezoneFinder is available and location coordinates are valid
+                if tf and location_is_valid_for_run:
                     try:
+                        # Find timezone name at the current coordinates
                         found_tz = tf.timezone_at(lng=current_lon, lat=current_lat)
                         if found_tz:
-                            pytz.timezone(found_tz) # Validate before setting
-                            st.session_state.selected_timezone = found_tz
+                            # Validate the found timezone name using pytz
+                            pytz.timezone(found_tz) # This will raise UnknownTimeZoneError if invalid
+                            st.session_state.selected_timezone = found_tz # Store valid timezone
                             auto_timezone_msg = f"{t['timezone_auto_set_label']} **{found_tz}**"
                         else:
-                            st.session_state.selected_timezone = 'UTC'
+                            # TimezoneFinder returned None (e.g., location in ocean)
+                            st.session_state.selected_timezone = 'UTC' # Fallback to UTC
                             auto_timezone_msg = f"{t['timezone_auto_fail_label']} **UTC** ({t['timezone_auto_fail_msg']})"
                     except pytz.UnknownTimeZoneError:
-                            st.session_state.selected_timezone = 'UTC'
-                            auto_timezone_msg = f"{t['timezone_auto_fail_label']} **UTC** (Invalid TZ '{found_tz}')"
+                        # Handle case where TimezoneFinder returns an invalid name
+                         st.session_state.selected_timezone = 'UTC'
+                         auto_timezone_msg = f"{t['timezone_auto_fail_label']} **UTC** (Invalid TZ '{found_tz}')"
                     except Exception as tz_find_e:
-                            print(f"Error finding timezone: {tz_find_e}")
-                            st.session_state.selected_timezone = 'UTC'
-                            auto_timezone_msg = f"{t['timezone_auto_fail_label']} **UTC** (Error)"
+                        # Handle other errors during timezone lookup
+                        print(f"Error finding timezone: {tz_find_e}")
+                        st.session_state.selected_timezone = 'UTC' # Fallback to UTC
+                        auto_timezone_msg = f"{t['timezone_auto_fail_label']} **UTC** (Error)"
 
                 elif not tf:
-                     auto_timezone_msg = "Timezonefinder library not available."
-                     st.session_state.selected_timezone = INITIAL_TIMEZONE
-                elif not location_is_valid_for_run: # Don't try finding TZ if location isn't valid
-                     st.session_state.selected_timezone = INITIAL_TIMEZONE
-                     # Don't show a TZ message if location isn't set yet
+                    # TimezoneFinder library is not available
+                    auto_timezone_msg = "Timezonefinder library not available. Using fallback."
+                    st.session_state.selected_timezone = INITIAL_TIMEZONE # Use initial default
+                elif not location_is_valid_for_run:
+                    # Don't try finding timezone if location isn't valid yet
+                    st.session_state.selected_timezone = INITIAL_TIMEZONE
+                    # No message needed here, user needs to set location first
 
-            except Exception as e: # Error creating Observer
+            except Exception as e: # Error creating Observer object
                 warning_placeholder.error(t['location_error'].format(e))
                 location_display_name_for_run = t['location_error_fallback']
-                location_is_valid_for_run = False
-                st.session_state.selected_timezone = INITIAL_TIMEZONE
+                location_is_valid_for_run = False # Cannot run main search
+                st.session_state.selected_timezone = INITIAL_TIMEZONE # Use fallback timezone
 
-        else: # Coordinates are not valid (e.g., initial state in Manual mode)
+        else: # Coordinates are not valid numbers (e.g., initial state in Manual mode before input)
             location_is_valid_for_run = False
             if st.session_state.location_choice_key == "Search":
-                 location_display_name_for_run = "Please search for a location"
+                location_display_name_for_run = "Please search for a location"
             elif st.session_state.location_choice_key == "Manual":
-                 location_display_name_for_run = "Enter valid coordinates"
-            st.session_state.selected_timezone = INITIAL_TIMEZONE
+                location_display_name_for_run = "Enter valid coordinates"
+            st.session_state.selected_timezone = INITIAL_TIMEZONE # Use fallback timezone
 
 
     # --- Time & Timezone Settings (Starts collapsed) ---
     with st.expander(t['time_expander'], expanded=False):
+        # Map internal keys to translated display options
         time_options_map = {'Now': t['time_option_now'], 'Specific': t['time_option_specific']}
+        # Radio button for selecting time mode
         time_choice_key = st.radio(
             t['time_select_label'], options=time_options_map.keys(),
-            format_func=lambda key: time_options_map[key], key="time_choice_exp"
+            format_func=lambda key: time_options_map[key], # Display translated options
+            key="time_choice_exp" # Update session state directly
         )
-        is_time_now = (time_choice_key == "Now")
-        if is_time_now:
-             reference_time = Time.now()
-        else:
-            selected_date = st.date_input(
-                t['time_date_select_label'], date.today(),
-                min_value=date.today()-timedelta(days=365*5),
-                max_value=date.today()+timedelta(days=365*1)
-            )
-            reference_time = Time(datetime.combine(selected_date, time(12, 0, tzinfo=timezone.utc)))
+        is_time_now = (time_choice_key == "Now") # Boolean flag for current mode
 
-        st.markdown("---")
-        # Display the automatically determined timezone or fallback
-        if auto_timezone_msg:
-             st.markdown(auto_timezone_msg, unsafe_allow_html=True)
+        if is_time_now:
+            # If 'Now', use the current time as the reference
+            reference_time = Time.now()
         else:
-             # Show fallback if auto-detection hasn't run or failed silently
-             st.markdown(f"{t['timezone_auto_fail_label']} **{st.session_state.selected_timezone}**")
+            # If 'Specific Night', show date input
+            selected_date = st.date_input(
+                t['time_date_select_label'], date.today(), # Default to today
+                min_value=date.today()-timedelta(days=365*5), # Allow dates 5 years in the past
+                max_value=date.today()+timedelta(days=365*1) # Allow dates 1 year in the future
+            )
+            # Use noon UTC on the selected date as the reference time
+            # This avoids ambiguity around midnight when calculating the *next* twilight
+            reference_time = Time(datetime.combine(selected_date, time(12, 0)), scale='utc')
+
+
+        st.markdown("---") # Separator
+        # Display the automatically determined timezone or the fallback
+        if auto_timezone_msg:
+            # Use markdown to allow bold formatting in the message
+            st.markdown(auto_timezone_msg, unsafe_allow_html=True)
+        else:
+            # Show fallback timezone if auto-detection hasn't run or failed silently
+            st.markdown(f"{t['timezone_auto_fail_label']} **{st.session_state.selected_timezone}**")
 
 
     # --- Filter Settings (Starts collapsed) ---
     with st.expander(t['filters_expander'], expanded=False):
-        # Magnitude Filter
+        # --- Magnitude Filter ---
         st.markdown(t['mag_filter_header'])
+        # Map internal keys to translated display options
         mag_filter_options_map = {'Bortle Scale': t['mag_filter_option_bortle'], 'Manual': t['mag_filter_option_manual']}
+        # Radio button for magnitude filter mode
         st.radio(t['mag_filter_method_label'], options=mag_filter_options_map.keys(),
-             format_func=lambda key: mag_filter_options_map[key], key="mag_filter_mode_exp", horizontal=True)
-        # Use state keys directly for slider values
+             format_func=lambda key: mag_filter_options_map[key], # Display translated options
+             key="mag_filter_mode_exp", # Update session state directly
+             horizontal=True) # Display options horizontally
+
+        # Bortle scale slider (always visible, but only used if mode is 'Bortle Scale')
+        # Use state key directly for slider value persistence
         bortle_val = st.slider(t['mag_filter_bortle_label'], min_value=1, max_value=9, key='bortle_slider', help=t['mag_filter_bortle_help'])
+
+        # Manual magnitude sliders (only shown if mode is 'Manual')
         if st.session_state.mag_filter_mode_exp == "Manual":
             manual_min_mag_val = st.slider(t['mag_filter_min_mag_label'], min_value=-5.0, max_value=20.0, step=0.5, format="%.1f", help=t['mag_filter_min_mag_help'], key='manual_min_mag_slider')
             manual_max_mag_val = st.slider(t['mag_filter_max_mag_label'], min_value=-5.0, max_value=20.0, step=0.5, format="%.1f", help=t['mag_filter_max_mag_help'], key='manual_max_mag_slider')
+            # Check if min > max and show warning
             if isinstance(st.session_state.manual_min_mag_slider, (int, float)) and isinstance(st.session_state.manual_max_mag_slider, (int, float)):
                  if st.session_state.manual_min_mag_slider > st.session_state.manual_max_mag_slider:
-                       st.warning(t['mag_filter_warning_min_max'])
+                     st.warning(t['mag_filter_warning_min_max'])
 
-        # Altitude Filter
-        st.markdown("---")
+        # --- Altitude Filter ---
+        st.markdown("---") # Separator
         st.markdown(t['min_alt_header'])
-        # Use state key for slider value
+        # Minimum altitude slider
+        # Use state key directly for slider value persistence
         min_altitude_deg_widget = st.slider(t['min_alt_label'], min_value=5, max_value=45, key='min_alt_slider', step=1)
-        # min_altitude_limit calculation moved to main search block
+        # The actual astropy quantity (min_altitude_limit) is created later before the search
 
-        # Moon Filter
-        st.markdown("---")
+        # --- Moon Filter ---
+        st.markdown("---") # Separator
         st.markdown(t['moon_warning_header'])
-        # Use state key for slider value
+        # Moon phase warning threshold slider
+        # Use state key directly for slider value persistence
         moon_phase_threshold = st.slider(t['moon_warning_label'], min_value=0, max_value=100, key='moon_phase_slider', step=5)
 
-        # Object Type Filter
-        st.markdown("---")
+        # --- Object Type Filter ---
+        st.markdown("---") # Separator
         st.markdown(t['object_types_header'])
-        effective_selected_types = []
-        all_types = []
+        effective_selected_types = [] # List of types to actually use in the filter
+        all_types = [] # List of all unique types found in the catalog
+        # Check if catalog data is loaded and not empty
         if df_catalog_data is not None and not df_catalog_data.empty:
             try:
+                # Extract unique object types from the 'Type' column
                 if 'Type' in df_catalog_data.columns:
-                     all_types = sorted(list(df_catalog_data['Type'].dropna().astype(str).unique()))
-                else: all_types = []
+                    all_types = sorted(list(df_catalog_data['Type'].dropna().astype(str).unique()))
+                else:
+                    st.warning("Catalog is missing the 'Type' column.")
+                    all_types = []
             except Exception as e:
+                # Handle errors during type extraction
                 st.warning(f"Could not extract object types from loaded data: {e}")
                 all_types = []
 
+            # If types were found, create the multiselect widget
             if all_types:
+                # Ensure the default selection in state only contains valid types from the current catalog
                 current_selection_in_state = [sel for sel in st.session_state.object_type_filter_exp if sel in all_types]
+                # Update state if it contained invalid types
                 if current_selection_in_state != st.session_state.object_type_filter_exp:
-                     st.session_state.object_type_filter_exp = current_selection_in_state
+                    st.session_state.object_type_filter_exp = current_selection_in_state
+
+                # Set default for the widget: use state if not empty, otherwise select all
                 default_for_widget = current_selection_in_state if current_selection_in_state else all_types
+                # Create the multiselect widget
                 selected_object_types_widget = st.multiselect(
                     t['object_types_label'], options=all_types,
-                    default=default_for_widget, key="object_type_filter_exp"
+                    default=default_for_widget, key="object_type_filter_exp" # Update state directly
                 )
+                # Determine the effective filter list: empty list means 'all'
+                # If nothing is selected, or if everything is selected, treat as 'all' (empty list)
                 if not selected_object_types_widget or set(selected_object_types_widget) == set(all_types):
-                     effective_selected_types = []
+                    effective_selected_types = [] # Empty list signifies no type filter
                 else:
+                    # Use the user's specific selection
                     effective_selected_types = selected_object_types_widget
             else: st.info("No object types found in catalog data to filter.")
         else: st.info("Catalog not loaded, cannot filter by type.")
 
 
-        # Direction Filter
-        st.markdown("---")
+        # --- Direction Filter ---
+        st.markdown("---") # Separator
         st.markdown(t['direction_filter_header'])
-        all_directions_str = t['direction_option_all'] # Use translated string for display
+        all_directions_str = t['direction_option_all'] # Get translated string for "All"
+        # Options to display in the selectbox (using translated "All")
         direction_options_display = [all_directions_str] + CARDINAL_DIRECTIONS
+        # Corresponding internal values used in logic ('All', 'N', 'NE', ...)
         direction_options_internal = [ALL_DIRECTIONS_KEY] + CARDINAL_DIRECTIONS
         try:
+            # Get the current internal value from state
             current_direction_internal = st.session_state.selected_peak_direction
+            # Ensure the value in state is valid, default to 'All' if not
             if current_direction_internal not in direction_options_internal:
                  current_direction_internal = ALL_DIRECTIONS_KEY
                  st.session_state.selected_peak_direction = current_direction_internal
+            # Find the index corresponding to the current internal value
             current_direction_index = direction_options_internal.index(current_direction_internal)
         except ValueError:
-             st.session_state.selected_peak_direction = ALL_DIRECTIONS_KEY
-             current_direction_index = 0
+            # Handle case where state value is somehow invalid
+            st.session_state.selected_peak_direction = ALL_DIRECTIONS_KEY
+            current_direction_index = 0
+        # Create the selectbox for direction filter
         selected_direction_display = st.selectbox(
              t['direction_filter_label'], options=direction_options_display,
-             index=current_direction_index,
+             index=current_direction_index, # Set default selection based on state
         )
-        # Map selected display value back to internal value ('All', 'N', ...)
+        # Map the selected display value back to the internal value and update state
         if selected_direction_display == all_directions_str:
-             st.session_state.selected_peak_direction = ALL_DIRECTIONS_KEY
+            st.session_state.selected_peak_direction = ALL_DIRECTIONS_KEY
         else:
-             st.session_state.selected_peak_direction = selected_direction_display
+            # The display value for cardinal directions is the same as the internal value
+            st.session_state.selected_peak_direction = selected_direction_display
 
 
     # --- Result Options (Starts collapsed) ---
     with st.expander(t['results_options_expander'], expanded=False):
+        # Determine max value for the 'number of objects' slider based on loaded catalog size
         max_slider_val = len(df_catalog_data) if df_catalog_data is not None and not df_catalog_data.empty else 50
-        min_slider_val = 5
+        min_slider_val = 5 # Minimum number of objects to show
+        # Ensure max value is at least the min value
         actual_max_slider = max(min_slider_val, max_slider_val)
+        # Set default value for the slider (e.g., 20, but not more than max)
         default_num_objects = min(20, actual_max_slider)
-        slider_disabled = actual_max_slider < min_slider_val
+        # Disable slider if catalog is very small or not loaded
+        slider_disabled = actual_max_slider <= min_slider_val
+        # Create the slider for max number of objects
         num_objects_to_suggest = st.slider(
              t['results_options_max_objects_label'], min_value=min_slider_val,
              max_value=actual_max_slider, value=default_num_objects,
              step=1, disabled=slider_disabled
         )
+        # Map internal keys to translated display options for sorting
         sort_options_map = {
             'Duration & Altitude': t['results_options_sort_duration'],
             'Brightness': t['results_options_sort_magnitude']
         }
+        # Ensure the current sort method in state is valid
         if st.session_state.sort_method not in sort_options_map:
-            st.session_state.sort_method = 'Duration & Altitude'
+            st.session_state.sort_method = 'Duration & Altitude' # Default if invalid
+        # Create radio button for sorting method
         st.radio(
             t['results_options_sort_method_label'], options=list(sort_options_map.keys()),
-            format_func=lambda key: sort_options_map[key], key='sort_method', horizontal=True
+            format_func=lambda key: sort_options_map[key], # Display translated options
+            key='sort_method', # Update session state directly
+            horizontal=True # Display options horizontally
         )
 
 
 # --- Main Area ---
-# Display Moon Phase
-if moon_illumination:
+# Display Moon Phase information
+if moon_illumination: # Check if astroplan function is available
     try:
+        # Calculate moon illumination for the reference time
         current_moon_illumination = moon_illumination(reference_time)
         moon_percentage = current_moon_illumination * 100
-        moon_col1, moon_col2 = st.columns([1, 4])
+        # Use columns for layout: SVG image and metric value
+        moon_col1, moon_col2 = st.columns([1, 4]) # Adjust column ratios as needed
+        # Display SVG in the first column
         with moon_col1: st.markdown(create_moon_phase_svg(current_moon_illumination, size=80), unsafe_allow_html=True)
+        # Display metric and warning (if applicable) in the second column
         with moon_col2:
             st.metric(label=t['moon_metric_label'], value=f"{moon_percentage:.0f}%")
+            # Show warning if illumination exceeds the user-defined threshold
             if moon_percentage > st.session_state.moon_phase_slider: # Use state key
                  st.error(t['moon_warning_message'].format(moon_percentage, st.session_state.moon_phase_slider))
-    except NameError: st.warning("Moon phase calculation requires 'astroplan'. Please install it.")
-    except Exception as e: st.error(t['moon_phase_error'].format(e))
-else: st.warning("Moon phase calculation disabled: 'astroplan' library not found.")
+    except NameError:
+        # Handle case where astroplan might be imported but moon_illumination specifically failed
+        st.warning("Moon phase calculation requires 'astroplan'. Please install it.")
+    except Exception as e:
+        # Handle other errors during moon phase calculation
+        st.error(t['moon_phase_error'].format(e))
+else:
+    # Handle case where astroplan itself failed to import
+    st.warning("Moon phase calculation disabled: 'astroplan' library not found.")
 
-st.markdown("---")
+st.markdown("---") # Separator
 
 # --- Custom Target Plotter ---
 with st.expander(t['custom_target_expander']):
+    # Use columns for RA, Dec, and Name inputs
     col_ra, col_dec, col_name = st.columns(3)
     with col_ra:
         st.text_input(t['custom_target_ra_label'], key='custom_target_ra', placeholder=t['custom_target_ra_placeholder'])
@@ -1610,391 +1883,483 @@ with st.expander(t['custom_target_expander']):
     with col_name:
         st.text_input(t['custom_target_name_label'], key='custom_target_name', placeholder="e.g., M42")
 
+    # Button to trigger custom graph generation
     custom_target_button_pressed = st.button(t['custom_target_button'])
-    custom_target_error_placeholder = st.empty() # For errors specific to this section
+    custom_target_error_placeholder = st.empty() # Placeholder for errors specific to this section
 
     if custom_target_button_pressed:
         st.session_state.custom_target_error = "" # Clear previous errors
         st.session_state.custom_target_plot_data = None # Clear previous custom plot data
         st.session_state.show_custom_plot = False # Hide plot area initially
 
+        # Get inputs from state
         custom_ra_str = st.session_state.custom_target_ra
         custom_dec_str = st.session_state.custom_target_dec
-        custom_name = st.session_state.custom_target_name or "Custom Target"
+        custom_name = st.session_state.custom_target_name or "Custom Target" # Default name if empty
 
+        # --- Validation ---
         if not custom_ra_str or not custom_dec_str:
             st.session_state.custom_target_error = "RA and Dec cannot be empty."
-        elif not location_is_valid_for_run:
+        elif not location_is_valid_for_run or current_location_for_run is None:
+            # Need a valid location and observer object to calculate Alt/Az
             st.session_state.custom_target_error = t['custom_target_error_window']
         else:
+            # --- Calculation ---
             try:
-                # Validate/Parse RA/Dec
-                # Try parsing as sexagesimal first, then decimal
+                # Validate/Parse RA/Dec using SkyCoord
+                # Try parsing as sexagesimal first (HH:MM:SS.s / DD:MM:SS), then decimal degrees
                 try:
                     custom_target_coord = SkyCoord(ra=custom_ra_str, dec=custom_dec_str, unit=(u.hourangle, u.deg))
                 except ValueError:
+                    # If sexagesimal fails, try decimal degrees
                     custom_target_coord = SkyCoord(ra=custom_ra_str, dec=custom_dec_str, unit=(u.deg, u.deg))
 
-                # Get current observation window
-                # Recalculate window based on current settings to be sure
+                # Get current observation window based on main settings
+                # Recalculate window to ensure it matches current location/time settings
                 start_time, end_time, window_msg = get_observable_window(current_location_for_run, reference_time, is_time_now, lang)
 
+                # Check if a valid window was found
                 if start_time and end_time and start_time < end_time:
+                    # Generate time steps within the observation window
                     time_delta_hours = (end_time - start_time).to(u.hour).value
-                    num_time_steps = max(30, int(time_delta_hours * 12))
+                    num_time_steps = max(30, int(time_delta_hours * 12)) # ~5 min steps, min 30 steps
                     observing_times = Time(np.linspace(start_time.jd, end_time.jd, num_time_steps), format='jd', scale='utc')
 
-                    # Calculate Alt/Az path
+                    # Calculate Alt/Az path for the custom target using the valid observer location
                     altaz_frame = AltAz(obstime=observing_times, location=current_location_for_run.location)
                     target_altaz = custom_target_coord.transform_to(altaz_frame)
 
-                    # Prepare data for plotting function and store in state
+                    # Prepare data dictionary needed for the plotting functions
                     st.session_state.custom_target_plot_data = {
                         "name": custom_name,
                         "times_jd": observing_times.jd,
                         "altitudes": target_altaz.alt.to(u.deg).value,
                         "azimuths": target_altaz.az.to(u.deg).value,
-                        "min_alt_limit": st.session_state.min_alt_slider # Use current slider value
+                        "min_alt_limit": st.session_state.min_alt_slider # Use current min alt slider value for the plot line
                     }
-                    st.session_state.show_custom_plot = True # Set flag to show plot area
-                    st.session_state.show_plot = False # Hide main results plot if shown
-                    st.session_state.expanded_object_name = None # Collapse main results
-                    st.session_state.active_result_plot_data = None # Clear active result plot data
+                    st.session_state.show_custom_plot = True # Set flag to show plot area below
+                    # Hide main results plot if it was shown
+                    st.session_state.show_plot = False
+                    st.session_state.expanded_object_name = None
+                    st.session_state.active_result_plot_data = None
                     st.session_state.plot_object_name = None
 
-                else: # No valid window
+                else: # No valid observation window found
                      st.session_state.custom_target_error = window_msg or t['error_no_window']
 
             except ValueError as e:
+                # Handle errors during coordinate parsing
                 st.session_state.custom_target_error = f"{t['custom_target_error_coords']} ({e})"
             except Exception as e:
+                # Handle other unexpected errors during calculation
                 st.session_state.custom_target_error = f"Error calculating custom target path: {e}"
                 st.exception(e) # Print full traceback for debugging
 
-        # Display error if any occurred
+        # Display error if any occurred during custom target processing
         if st.session_state.custom_target_error:
              custom_target_error_placeholder.error(st.session_state.custom_target_error)
         else:
              custom_target_error_placeholder.empty() # Clear placeholder if successful
              # Use rerun to ensure the plot area below updates immediately after button press
+             # This forces the script to run again, detecting show_custom_plot=True
              st.rerun()
 
 
 # --- Global Plot Type Selector (Moved outside results list) ---
 st.markdown("---") # Separator
+# Map internal keys to translated display options
 plot_type_options = {
     'Sky Path': t['graph_type_sky_path'],
     'Altitude/Time': t['graph_type_alt_time']
 }
-# Ensure current selection is valid, default to Sky Path
+# Ensure current selection in state is valid, default to Sky Path if not
 if st.session_state.plot_type_selection not in plot_type_options:
     st.session_state.plot_type_selection = 'Sky Path'
 
+# Create radio button for selecting the plot type
+# This applies to both the results plots and the custom target plot
 st.radio(
-    t['graph_type_label'], # Use renamed key
+    t['graph_type_label'], # Use renamed key for clarity
     options=list(plot_type_options.keys()),
-    format_func=lambda key: plot_type_options[key],
-    key='plot_type_selection', # Update state directly
-    horizontal=True
+    format_func=lambda key: plot_type_options[key], # Display translated options
+    key='plot_type_selection', # Update session state directly
+    horizontal=True # Display options horizontally
 )
-# This radio button changing will trigger a rerun, updating the visible plot below
+# Changing this radio button will trigger a rerun, updating the visible plot below
 
 
 # --- Generate and Store Active Plot Figure (Custom or Result) ---
-# This section runs on every rerun, including when the radio button changes
-active_plot_fig = None # Initialize fig variable for this run
-plot_data_to_use = None
+# This section runs on every rerun, including when the plot type radio button changes
+active_plot_fig = None # Initialize fig variable for this run to None
+plot_data_to_use = None # Initialize data variable
+
+# Determine which plot function to use based on the selected type
 plot_func = plot_sky_path if st.session_state.plot_type_selection == 'Sky Path' else plot_altitude_time
 
-# Determine which data to use for plotting (custom or result)
+# Determine which data to use for plotting (custom target or a result from the list)
 if st.session_state.show_custom_plot and st.session_state.custom_target_plot_data is not None:
+    # Use custom target data if its plot is active
     plot_data_to_use = st.session_state.custom_target_plot_data
 elif st.session_state.show_plot and st.session_state.active_result_plot_data is not None:
+    # Use active result data if a result plot is active
     plot_data_to_use = st.session_state.active_result_plot_data
 
-# Generate the plot if data is available
+# Generate the plot figure if data is available and plotting libraries are loaded
 if plot_data_to_use is not None:
+    # Get location tuple needed for plotting functions (can be None if location invalid)
     location_tuple = (
         current_location_for_run.location.lat.deg,
         current_location_for_run.location.lon.deg,
         current_location_for_run.location.height.value
-    ) if current_location_for_run else None
+    ) if current_location_for_run and location_is_valid_for_run else None
 
+    # Check if Matplotlib, the plot function, and location are valid
     if plt and plot_func and location_tuple:
-        # No spinner here, as it runs on every interaction with the radio button
+        # Call the selected plotting function (plot_sky_path or plot_altitude_time)
+        # No spinner here, as it runs on every interaction with the radio button, should be fast
         active_plot_fig = plot_func(
-            plot_data_to_use,
-            location_tuple,
-            lang,
-            st.session_state.selected_timezone
+            plot_data_to_use, # The data dictionary (custom or result)
+            location_tuple, # Observer location details
+            lang, # Current language for labels
+            st.session_state.selected_timezone # Current timezone for time axis/markers
         )
+    elif not location_tuple:
+         # This case should ideally be prevented by disabling buttons, but good to handle
+         print("Plot generation skipped: Location is not valid.")
+    elif not plt or not plot_func:
+         print("Plot generation skipped: Plotting library or function not available.")
 
 
 # --- Display Custom Target Plot Area ---
-custom_plot_area = st.container() # Container to hold the custom plot
+custom_plot_area = st.container() # Container to hold the custom plot and close button
 if st.session_state.show_custom_plot:
     with custom_plot_area:
-        if active_plot_fig:
-            st.pyplot(active_plot_fig)
+        if active_plot_fig: # Check if the figure was generated successfully
+            st.pyplot(active_plot_fig) # Display the plot
+            # Add a button to close/hide the custom plot
             if st.button(t['results_close_graph_button'], key="close_custom_graph", type="secondary"):
-                st.session_state.show_custom_plot = False
-                st.session_state.custom_target_plot_data = None
-                st.rerun() # Rerun to clear the plot
+                st.session_state.show_custom_plot = False # Hide the plot area
+                st.session_state.custom_target_plot_data = None # Clear the data
+                st.rerun() # Rerun to update the UI and remove the plot
         else:
-            # Handle case where plot generation failed but should be shown
-            st.warning(t['results_graph_not_created'])
+            # Handle case where plot generation failed but the area should be shown (e.g., error occurred)
+            st.warning(t['results_graph_not_created']) # Show a message indicating plot failure
 
 
 # --- Main Search Button & Logic ---
+# Disable button if location is invalid or catalog is not loaded
 find_disabled = not location_is_valid_for_run or df_catalog_data is None or df_catalog_data.empty
 if st.button(t['find_button_label'], key="find_button", type="primary", use_container_width=True, disabled=find_disabled):
 
-    st.session_state.expanded_object_name = None
+    # --- Reset states before starting a new search ---
+    st.session_state.expanded_object_name = None # Collapse all result expanders
     st.session_state.show_plot = False # Hide result plot area
-    st.session_state.plot_object_name = None
+    st.session_state.plot_object_name = None # Clear name of plotted result object
     st.session_state.active_result_plot_data = None # Clear active result plot data
     st.session_state.show_custom_plot = False # Hide custom plot area
     st.session_state.custom_target_plot_data = None # Clear custom plot data
+    st.session_state.find_button_pressed = True # Flag that search process has started
+    st.session_state.last_results = [] # Clear previous results
 
-    # Re-check conditions (redundant with disabled state but safe)
+    # Re-check conditions (mostly redundant with disabled state but safe)
     if not location_is_valid_for_run:
+         # Show specific error based on location mode
          st.error(t[f'location_error_{st.session_state.location_choice_key.lower()}_search'] if st.session_state.location_choice_key != 'Default' else t['location_error_undefined'])
-    elif current_location_for_run is None or not isinstance(current_location_for_run, Observer): # Check type
-         st.error(t['location_error_undefined'])
+    elif current_location_for_run is None or not isinstance(current_location_for_run, Observer): # Check type again
+         st.error(t['location_error_undefined']) # Should not happen if disabled logic is correct
     elif df_catalog_data is None or df_catalog_data.empty:
          st.error("Cannot search: Catalog data is not loaded or empty.")
     else:
-        # --- Start Search Process ---
-        st.session_state.find_button_pressed = True
-        st.session_state.last_results = []
-        with st.container(border=True): # Display Search Parameters
-             st.subheader(t['search_params_header'])
-             col1, col2, col3 = st.columns(3)
-             with col1: st.info(t['search_params_location'].format(location_display_name_for_run))
-             with col2:
-                 date_str_display = reference_time.datetime.date().strftime('%Y-%m-%d')
-                 time_info = t['search_params_time_now'].format(reference_time.to_datetime(timezone.utc).strftime('%Y-%m-%d %H:%M %Z')) if is_time_now else t['search_params_time_specific'].format(date_str_display)
-                 st.info(t['search_params_time'].format(time_info))
-                 st.info(t['search_params_timezone'].format(st.session_state.selected_timezone))
-             with col3:
-                 magnitude_filter_mode_disp = st.session_state.mag_filter_mode_exp
-                 min_mag_disp = st.session_state.manual_min_mag_slider
-                 max_mag_disp = st.session_state.manual_max_mag_slider
-                 bortle_disp = st.session_state.bortle_slider # Use state key
-                 if magnitude_filter_mode_disp == "Bortle Scale":
-                     mag_limit_display = get_magnitude_limit(bortle_disp)
-                     mag_info = t['search_params_filter_mag_bortle'].format(bortle_disp, mag_limit_display)
-                 else: # Manual
-                     if isinstance(min_mag_disp, (int, float)) and isinstance(max_mag_disp, (int, float)) and min_mag_disp > max_mag_disp:
-                          min_mag_disp, max_mag_disp = max_mag_disp, min_mag_disp
-                     mag_info = t['search_params_filter_mag_manual'].format(min_mag_disp or 0.0, max_mag_disp or 20.0)
-                 st.info(t['search_params_filter_mag'].format(mag_info))
-                 types_display = t['search_params_types_all'] if not effective_selected_types else ', '.join(effective_selected_types)
-                 min_alt_disp = st.session_state.min_alt_slider # Use state key
-                 st.info(t['search_params_filter_alt_types'].format(min_alt_disp, types_display))
-                 selected_dir_internal = st.session_state.selected_peak_direction
-                 direction_display_map = {ALL_DIRECTIONS_KEY: t['direction_option_all']}
-                 direction_display_map.update({k: k for k in CARDINAL_DIRECTIONS})
-                 selected_dir_disp = direction_display_map.get(selected_dir_internal, selected_dir_internal)
-                 st.info(t['search_params_filter_direction'].format(selected_dir_disp))
-        st.markdown("---")
+        # --- Display Search Parameters ---
+        with st.container(border=True): # Use a bordered container for parameters
+            st.subheader(t['search_params_header'])
+            col1, col2, col3 = st.columns(3) # Use columns for layout
+            # Column 1: Location
+            with col1: st.info(t['search_params_location'].format(location_display_name_for_run))
+            # Column 2: Time & Timezone
+            with col2:
+                date_str_display = reference_time.datetime.date().strftime('%Y-%m-%d')
+                # Format time info based on 'Now' or 'Specific' mode
+                time_info = t['search_params_time_now'].format(reference_time.to_datetime(timezone.utc).strftime('%Y-%m-%d %H:%M %Z')) if is_time_now else t['search_params_time_specific'].format(date_str_display)
+                st.info(t['search_params_time'].format(time_info))
+                st.info(t['search_params_timezone'].format(st.session_state.selected_timezone))
+            # Column 3: Filters
+            with col3:
+                # Get filter values from state
+                magnitude_filter_mode_disp = st.session_state.mag_filter_mode_exp
+                min_mag_disp = st.session_state.manual_min_mag_slider
+                max_mag_disp = st.session_state.manual_max_mag_slider
+                bortle_disp = st.session_state.bortle_slider # Use state key
+                # Format magnitude filter info
+                if magnitude_filter_mode_disp == "Bortle Scale":
+                    mag_limit_display = get_magnitude_limit(bortle_disp)
+                    mag_info = t['search_params_filter_mag_bortle'].format(bortle_disp, mag_limit_display)
+                else: # Manual mode
+                    # Ensure min/max order for display if needed
+                    if isinstance(min_mag_disp, (int, float)) and isinstance(max_mag_disp, (int, float)) and min_mag_disp > max_mag_disp:
+                         min_mag_disp, max_mag_disp = max_mag_disp, min_mag_disp
+                    mag_info = t['search_params_filter_mag_manual'].format(min_mag_disp or 0.0, max_mag_disp or 20.0)
+                st.info(t['search_params_filter_mag'].format(mag_info))
+                # Format altitude and type filter info
+                types_display = t['search_params_types_all'] if not effective_selected_types else ', '.join(effective_selected_types)
+                min_alt_disp = st.session_state.min_alt_slider # Use state key
+                st.info(t['search_params_filter_alt_types'].format(min_alt_disp, types_display))
+                # Format direction filter info
+                selected_dir_internal = st.session_state.selected_peak_direction
+                # Map internal key to display string (including translated "All")
+                direction_display_map = {ALL_DIRECTIONS_KEY: t['direction_option_all']}
+                direction_display_map.update({k: k for k in CARDINAL_DIRECTIONS}) # N, NE, etc. are same internal/display
+                selected_dir_disp = direction_display_map.get(selected_dir_internal, selected_dir_internal) # Fallback to internal key if map fails
+                st.info(t['search_params_filter_direction'].format(selected_dir_disp))
+        st.markdown("---") # Separator
 
         # --- Perform Calculations ---
-        selected_objects = []
-        all_found_objects = []
-        window_info_placeholder = st.empty()
+        selected_objects = [] # Final list after sorting/limiting
+        all_found_objects = [] # List before direction filter/sorting/limiting
+        window_info_placeholder = st.empty() # Placeholder for window calculation messages
         try:
-            with st.spinner(t['spinner_searching']):
-                # Pass the astroplan Observer object
+            with st.spinner(t['spinner_searching']): # Show spinner during main calculation
+                # Calculate the observation window using the valid Observer object
                 start_time, end_time, window_msg = get_observable_window(current_location_for_run, reference_time, is_time_now, lang)
-                if window_msg:
-                    formatted_window_msg = window_msg.replace("\n", "\n\n")
-                    if "Warning" in window_msg or "Warnung" in window_msg or "Error" in window_msg or "Fehler" in window_msg or "invalid" in window_msg or "polar" in window_msg.lower():
-                         window_info_placeholder.warning(formatted_window_msg)
-                    else:
-                         window_info_placeholder.info(formatted_window_msg)
 
+                # Display window calculation message (info, warning, or error)
+                if window_msg:
+                    formatted_window_msg = window_msg.replace("\n", "\n\n") # Add extra newline for readability
+                    # Check keywords to determine message type
+                    if "Warning" in window_msg or "Warnung" in window_msg or "Error" in window_msg or "Fehler" in window_msg or "invalid" in window_msg or "polar" in window_msg.lower() or "fallback" in window_msg.lower():
+                        window_info_placeholder.warning(formatted_window_msg)
+                    else:
+                        window_info_placeholder.info(formatted_window_msg)
+
+                # Proceed only if a valid window was found
                 if start_time and end_time and start_time < end_time:
+                    # Generate time steps for the observation window
                     time_delta_hours = (end_time - start_time).to(u.hour).value
                     # Ensure a minimum number of steps even for short windows
-                    num_time_steps = max(30, int(time_delta_hours * 12)) # ~5 min steps
+                    num_time_steps = max(30, int(time_delta_hours * 12)) # ~5 min steps, min 30 steps
                     observing_times = Time(np.linspace(start_time.jd, end_time.jd, num_time_steps), format='jd', scale='utc')
 
+                    # Get filter values from state again (to be sure)
                     magnitude_filter_mode_calc = st.session_state.mag_filter_mode_exp
                     min_mag_calc = st.session_state.manual_min_mag_slider
                     max_mag_calc = st.session_state.manual_max_mag_slider
                     bortle_calc = st.session_state.bortle_slider # Use state key
-                    # Calculate min altitude limit here, using the state value
+                    # Calculate min altitude limit as Astropy Quantity here
                     min_alt_limit_calc = st.session_state.min_alt_slider * u.deg
 
-                    # Pass Observer's location to find_observable_objects
+                    # Call the main function to find observable objects
+                    # Pass the Observer's location attribute (EarthLocation)
                     all_found_objects = find_observable_objects(
                         current_location_for_run.location, observing_times, min_alt_limit_calc,
                         magnitude_filter_mode_calc, bortle_calc, min_mag_calc, max_mag_calc,
-                        effective_selected_types, df_catalog_data, lang
+                        effective_selected_types, # Use the processed list (empty means all)
+                        df_catalog_data, lang
                     )
-                elif not window_msg:
+                elif not window_msg: # If no window and no message, show default error
                      st.error(t['error_no_window'])
 
-            # --- Post-Calculation Processing ---
+            # --- Post-Calculation Processing (Filtering, Sorting, Limiting) ---
             objects_after_direction_filter = []
             selected_dir_filter_internal = st.session_state.selected_peak_direction
+            # Apply direction filter if 'All' is not selected
             if selected_dir_filter_internal != ALL_DIRECTIONS_KEY:
                 objects_after_direction_filter = [obj for obj in all_found_objects if obj.get('peak_direction') == selected_dir_filter_internal]
             else:
+                # No direction filter needed
                 objects_after_direction_filter = all_found_objects
 
+            # Check if any objects remain after all filters
             if objects_after_direction_filter:
                 st.success(t['success_objects_found'].format(len(objects_after_direction_filter)))
+                # Sort the results based on the selected method
                 sort_method = st.session_state.sort_method
                 if sort_method == 'Duration & Altitude':
-                    # Sort primarily by CONT duration, secondarily by peak altitude
+                    # Sort primarily by continuous duration (desc), secondarily by peak altitude (desc)
                     objects_after_direction_filter.sort(key=lambda x: (x.get('cont_duration_hours', 0), x.get('peak_alt', 0)), reverse=True)
                     info_message = t['info_showing_list_duration']
                 elif sort_method == 'Brightness':
+                    # Sort by magnitude (ascending - brightest first)
                     objects_after_direction_filter.sort(key=lambda x: x['magnitude'])
                     info_message = t['info_showing_list_magnitude']
-                else: # Fallback sort
+                else: # Fallback sort (shouldn't happen with radio button)
                     objects_after_direction_filter.sort(key=lambda x: (x.get('cont_duration_hours', 0), x.get('peak_alt', 0)), reverse=True)
                     info_message = t['info_showing_list_duration']
+
+                # Limit the number of results displayed based on the slider
                 selected_objects = objects_after_direction_filter[:num_objects_to_suggest]
-                st.write(info_message.format(len(selected_objects)))
-                st.session_state.last_results = selected_objects
+                st.write(info_message.format(len(selected_objects))) # Show info about sorting/limiting
+                st.session_state.last_results = selected_objects # Store final list in state
             else:
-                 if all_found_objects and selected_dir_filter_internal != ALL_DIRECTIONS_KEY:
-                      direction_display_map = {ALL_DIRECTIONS_KEY: t['direction_option_all']}
-                      direction_display_map.update({k: k for k in CARDINAL_DIRECTIONS})
-                      selected_dir_disp = direction_display_map.get(selected_dir_filter_internal, selected_dir_filter_internal)
-                      st.warning(f"No objects found matching all criteria, including peaking in the selected direction: {selected_dir_disp}")
-                 elif start_time and end_time and start_time < end_time:
-                     st.warning(t['warning_no_objects_found'])
-                 st.session_state.last_results = []
+                # No objects found matching all criteria
+                if all_found_objects and selected_dir_filter_internal != ALL_DIRECTIONS_KEY:
+                    # Specific message if direction filter caused no results
+                    direction_display_map = {ALL_DIRECTIONS_KEY: t['direction_option_all']}
+                    direction_display_map.update({k: k for k in CARDINAL_DIRECTIONS})
+                    selected_dir_disp = direction_display_map.get(selected_dir_filter_internal, selected_dir_filter_internal)
+                    st.warning(f"No objects found matching all criteria, including peaking in the selected direction: {selected_dir_disp}")
+                elif start_time and end_time and start_time < end_time:
+                    # Generic message if window was valid but no objects matched other filters
+                    st.warning(t['warning_no_objects_found'])
+                # Ensure last_results is empty
+                st.session_state.last_results = []
+
         except Exception as main_e:
+            # Catch any unexpected errors during the main search process
             st.error(t['error_search_unexpected'])
-            st.exception(main_e)
-            st.session_state.last_results = []
+            st.exception(main_e) # Show full traceback
+            st.session_state.last_results = [] # Clear results on error
 
 
 # --- Display Results List ---
 if st.session_state.last_results:
     st.markdown("---")
     st.subheader(t['results_list_header'])
-    # Graph Type Selector is now above this section
+    # Global Plot Type Selector is now above this section
 
-    export_data = []
+    export_data = [] # List to hold data formatted for CSV export
 
+    # Iterate through the final list of objects to display
     for i, obj in enumerate(st.session_state.last_results):
+        # Get localized time string for the peak time
         peak_time_local_str, tz_display_name = get_local_time_str(obj['peak_time_utc'], st.session_state.selected_timezone)
+
+        # Prepare data row for CSV export (using translated headers)
         export_data.append({
-            t['results_export_name']: obj['name'],
-            t['results_export_type']: obj['type'],
+            t['results_export_name']: obj.get('name', 'N/A'),
+            t['results_export_type']: obj.get('type', 'N/A'),
             t['results_export_constellation']: obj.get('constellation', 'N/A'), # Add constellation
-            t['results_export_mag']: obj['magnitude'],
-            t['results_export_ra']: obj['ra'],
-            t['results_export_dec']: obj['dec'],
-            t['results_export_max_alt']: f"{obj['peak_alt']:.1f}",
+            t['results_export_mag']: obj.get('magnitude', ''), # Use get with default for safety
+            t['results_export_ra']: obj.get('ra', 'N/A'),
+            t['results_export_dec']: obj.get('dec', 'N/A'),
+            t['results_export_max_alt']: f"{obj.get('peak_alt', 0.0):.1f}",
             t['results_export_az_at_max']: f"{obj.get('peak_az', 0.0):.1f}",
             t['results_export_direction_at_max']: obj.get('peak_direction', '?'),
-            t['results_export_cont_duration']: f"{obj.get('cont_duration_hours', 0):.1f}", # Use new key
-            # t['results_export_total_duration']: f"{obj.get('total_duration_hours', 0):.1f}", # Removed
-            t['results_export_time_max_utc']: obj['peak_time_utc'],
+            t['results_export_cont_duration']: f"{obj.get('cont_duration_hours', 0):.1f}", # Use continuous duration
+            t['results_export_time_max_utc']: obj.get('peak_time_utc', 'N/A'),
             t['results_export_time_max_local']: f"{peak_time_local_str} ({tz_display_name})" if peak_time_local_str != "N/A" else "N/A"
         })
 
-        expander_title = t['results_expander_title'].format(obj['name'], obj['type'], obj['magnitude'])
-        is_expanded = (st.session_state.expanded_object_name == obj['name'])
+        # Create an expander for each object
+        expander_title = t['results_expander_title'].format(obj.get('name','?'), obj.get('type','?'), obj.get('magnitude', '?'))
+        # Check if this expander should be open (based on state)
+        is_expanded = (st.session_state.expanded_object_name == obj.get('name'))
         with st.expander(expander_title, expanded=is_expanded):
             # Repeat object name inside for emphasis
-            st.markdown(f"#### **{obj['name']}**")
+            st.markdown(f"#### **{obj.get('name', 'Unknown Object')}**")
             # Use columns for better layout of details
-            col1, col2, col3 = st.columns([2, 2, 3]) # Adjust ratios
-            with col1:
+            col1, col2, col3 = st.columns([2, 2, 3]) # Adjust column ratios as needed
+            with col1: # Coordinates & Type
                  st.markdown(t['results_coords_header'])
-                 st.markdown(f"RA: {obj['ra']}")
-                 st.markdown(f"Dec: {obj['dec']}")
+                 st.markdown(f"RA: {obj.get('ra', 'N/A')}")
+                 st.markdown(f"Dec: {obj.get('dec', 'N/A')}")
                  st.markdown(f"**{t['results_constellation_label']}** {obj.get('constellation', 'N/A')}") # Display Constellation
-                 st.markdown(f"**Type:** {obj['type']}")
-            with col2:
+                 st.markdown(f"**Type:** {obj.get('type', 'N/A')}")
+            with col2: # Peak Altitude & Time
                  st.markdown(t['results_max_alt_header'])
-                 st.markdown(f"**{obj['peak_alt']:.1f}°**")
-                 st.markdown(t['results_azimuth_label'].format(obj.get('peak_az', 0.0), f" ({obj.get('peak_direction', '?')})"))
+                 st.markdown(f"**{obj.get('peak_alt', 0.0):.1f}°**")
+                 st.markdown(t['results_azimuth_label'].format(obj.get('peak_az', 0.0), f" ({obj.get('peak_direction', '?')})")) # Show Azimuth and Direction
                  st.markdown(t['results_best_time_header'])
                  st.markdown(f"**{peak_time_local_str}** ({tz_display_name})")
-            with col3:
-                 st.markdown(t['results_cont_duration_header']) # Cont Duration
+            with col3: # Duration
+                 st.markdown(t['results_cont_duration_header']) # Continuous Duration
                  st.markdown(f"**{t['results_duration_value'].format(obj.get('cont_duration_hours', 0))}**")
-                 # Removed Total Duration display
 
             st.markdown("---") # Separator before plot button/plot
 
-            plot_button_key = f"plot_btn_{obj['name']}_{i}"
-            close_button_key = f"close_plot_{obj['name']}_{i}"
-            # Button to trigger plot generation/display
-            if st.button(t['results_graph_button'], key=plot_button_key):
-                st.session_state.plot_object_name = obj['name']
-                st.session_state.show_plot = True
-                st.session_state.expanded_object_name = obj['name']
-                st.session_state.active_result_plot_data = obj # Store data for replotting
-                st.session_state.show_custom_plot = False # Hide custom plot if shown
-                st.session_state.custom_target_plot_data = None
-                st.rerun()
+            # --- Plotting within Expander ---
+            plot_button_key = f"plot_btn_{obj.get('name','')}_{i}" # Unique key for plot button
+            close_button_key = f"close_plot_{obj.get('name','')}_{i}" # Unique key for close button
 
-            # Display area for the result plot (figure is generated above the loop now)
-            if st.session_state.show_plot and st.session_state.plot_object_name == obj['name']:
-                 if active_plot_fig: # Check if figure was generated successfully
-                     st.pyplot(active_plot_fig)
-                     if st.button(t['results_close_graph_button'], key=close_button_key, type="secondary"):
-                         st.session_state.show_plot = False
-                         st.session_state.plot_object_name = None
-                         st.session_state.active_result_plot_data = None
-                         # No need to clear active_plot_fig here, it's regenerated on rerun if needed
-                         st.rerun()
-                 else:
-                     # Show error if plot failed but should be shown
-                     st.warning(t['results_graph_not_created'])
+            # Button to trigger plot generation/display for this specific object
+            if st.button(t['results_graph_button'], key=plot_button_key):
+                # Set state to indicate which object's plot should be shown
+                st.session_state.plot_object_name = obj.get('name')
+                st.session_state.show_plot = True # Flag to show the plot area
+                st.session_state.expanded_object_name = obj.get('name') # Keep this expander open
+                st.session_state.active_result_plot_data = obj # Store data needed for replotting on type change
+                # Hide custom plot if it was shown
+                st.session_state.show_custom_plot = False
+                st.session_state.custom_target_plot_data = None
+                st.rerun() # Rerun to generate and display the plot
+
+            # Display area for the result plot
+            # Check if the plot for *this specific object* should be shown
+            if st.session_state.show_plot and st.session_state.plot_object_name == obj.get('name'):
+                if active_plot_fig: # Check if the figure was generated successfully (above the loop)
+                    st.pyplot(active_plot_fig) # Display the plot
+                    # Add a button to close/hide this plot
+                    if st.button(t['results_close_graph_button'], key=close_button_key, type="secondary"):
+                        # Reset plot-related state variables
+                        st.session_state.show_plot = False
+                        st.session_state.plot_object_name = None
+                        st.session_state.active_result_plot_data = None
+                        # Optionally collapse the expander when closing the plot
+                        # st.session_state.expanded_object_name = None
+                        st.rerun() # Rerun to update the UI and remove the plot
+                else:
+                    # Show error message if plot failed but should be shown
+                    st.warning(t['results_graph_not_created'])
 
 
     # --- CSV Export Button ---
+    # Show button only if there is data to export and pandas is available
     if export_data and pd:
-        st.markdown("---")
+        st.markdown("---") # Separator
         try:
+            # Create DataFrame from the export data list
             df_export = pd.DataFrame(export_data)
-            # Define column order including constellation, remove total duration
+            # Define desired column order for the CSV file
+            # Use translated headers from the 't' dictionary
             cols = [t['results_export_name'], t['results_export_type'], t['results_export_constellation'],
                     t['results_export_mag'], t['results_export_cont_duration'],
                     t['results_export_max_alt'], t['results_export_az_at_max'], t['results_export_direction_at_max'],
                     t['results_export_time_max_local'], t['results_export_time_max_utc'],
                     t['results_export_ra'], t['results_export_dec']]
+            # Ensure only existing columns are selected (in case some data was missing)
             cols_exist = [col for col in cols if col in df_export.columns]
-            df_export = df_export[cols_exist]
+            df_export = df_export[cols_exist] # Reorder/select columns
+
+            # Convert DataFrame to CSV string in memory
             csv_buffer = io.StringIO()
+            # Use semicolon separator, UTF-8 encoding with BOM (for Excel compatibility)
             df_export.to_csv(csv_buffer, index=False, sep=';', encoding='utf-8-sig')
+
+            # Create filename including the observation date
             file_date = reference_time.datetime.date().strftime('%Y%m%d')
+            # Create Streamlit download button
             st.download_button(
-                label=t['results_save_csv_button'], data=csv_buffer.getvalue(),
-                file_name=t['results_csv_filename'].format(file_date), mime="text/csv"
+                label=t['results_save_csv_button'], # Button label
+                data=csv_buffer.getvalue(), # CSV data as string
+                file_name=t['results_csv_filename'].format(file_date), # Filename
+                mime="text/csv" # MIME type for CSV
             )
         except Exception as csv_e:
+            # Handle errors during CSV creation or export
             st.error(t['results_csv_export_error'].format(csv_e))
 
-    # --- Object Type Glossary (already moved near top) ---
 
-
-# Message if search was run but found nothing
+# --- Message if search was run but found nothing ---
 elif st.session_state.find_button_pressed and not st.session_state.last_results:
-    # Message is already shown in the main search logic block (e.g., warning_no_objects_found)
-    # Reset the button press state here *after* attempting to display results
-    st.session_state.find_button_pressed = False
+    # The warning message (e.g., 'warning_no_objects_found') is already shown
+    # in the main search logic block where the results are processed.
+    # No need to repeat the message here.
+    # Optionally, reset the button press state *after* attempting to display results
+    # st.session_state.find_button_pressed = False # Or keep it pressed until next action
+    pass # Message already handled
 
-# Initial message or if catalog failed to load
+# --- Initial message or if catalog failed to load ---
 elif not st.session_state.find_button_pressed:
     if df_catalog_data is not None:
-        # Show initial prompt, guide user based on current location validity
+        # Catalog loaded, show initial prompt to guide the user
         if not location_is_valid_for_run:
-             st.warning(t['info_initial_prompt']) # Use the updated prompt which asks for location first
-        # else: # Removed redundant message
-             # st.info("Location set. Adjust filters and click 'Find Observable Objects'.")
+            # If location isn't set/valid yet, prompt user to set it
+            st.warning(t['info_initial_prompt'])
+        # else: # Location is set, catalog loaded, but search not run yet
+            # Optionally show a message like:
+            # st.info("Location set. Adjust filters and click 'Find Observable Objects'.")
+            # This might be too verbose, so it's commented out.
     else:
-         # Error message is already shown by load_ongc_data if loading failed
-         st.error("Cannot proceed: Failed to load DSO catalog. Check file and restart.")
+         # Catalog failed to load. Error message is already shown by load_ongc_data.
+         # Add a persistent error in the main area if needed.
+         st.error("Cannot proceed: Failed to load DSO catalog. Check file and console output, then restart.")
 
