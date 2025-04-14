@@ -4,10 +4,10 @@ from __future__ import annotations # Keep for flexible type hinting
 import streamlit as st
 import random
 from datetime import datetime, date, time, timedelta, timezone
-import math
+# import math # Unused import removed
 import io
 import traceback
-import locale # Optional for locale-specific formatting
+# import locale # Unused import removed
 import os # Needed for file path joining
 
 # --- Page Config (MUST BE FIRST Streamlit command) ---
@@ -62,13 +62,13 @@ except ImportError as e:
      import_errors.append(f"Error: Required timezone library not found. Install: pip install pytz ({e})")
      pytz = None
 
-# Geopy für Ortsuche
+# Geopy für Ortsuche (Nominatim + ArcGIS Fallback + Photon Fallback)
 try:
-    from geopy.geocoders import Nominatim
+    from geopy.geocoders import Nominatim, ArcGIS, Photon # Added Photon
     from geopy.exc import GeocoderTimedOut, GeocoderServiceError, GeocoderQueryError
 except ImportError as e:
     import_errors.append(f"Error: Required geocoding library not found. Install: pip install geopy ({e})")
-    Nominatim = None; GeocoderTimedOut = None; GeocoderServiceError = None; GeocoderQueryError = None
+    Nominatim = None; ArcGIS = None; Photon = None; GeocoderTimedOut = None; GeocoderServiceError = None; GeocoderQueryError = None
 
 # TimezoneFinder für automatische Zeitzone
 try:
@@ -89,7 +89,7 @@ if import_errors:
 # --- Check if essential classes/functions were imported ---
 essential_imports_ok = all([
     Time, np, u, EarthLocation, SkyCoord, get_sun, AltAz, moon_illumination, pd, plt, pytz, mdates,
-    Nominatim, GeocoderTimedOut, GeocoderServiceError, GeocoderQueryError, # Geopy essentials
+    Nominatim, ArcGIS, Photon, GeocoderTimedOut, GeocoderServiceError, GeocoderQueryError, # Geopy essentials + Fallbacks
     TimezoneFinder, # TimezoneFinder
     Observer, AtNightConstraint, # Astroplan
     get_constellation # Astropy constellation function
@@ -98,10 +98,10 @@ if not essential_imports_ok:
     st.error("Stopping execution due to missing essential libraries (astropy, astroplan, pandas, matplotlib, pytz, geopy, timezonefinder).")
     st.stop()
 
-# --- Translations ---
-# *** FIX: Added/Renamed graph keys ***
+# --- Translations (DEUTSCH) ---
+# Using German as the primary example based on user interaction
 translations = {
-    'en': {
+    'en': { # English Fallback/Option
         'page_title': "Advanced DSO Finder",
         'settings_header': "Settings",
         'language_select_label': "Language / Sprache / Langue",
@@ -112,12 +112,18 @@ translations = {
         'location_search_label': "Enter Location Name:",
         'location_search_submit_button': "Find Coordinates",
         'location_search_placeholder': "e.g., Berlin, Germany or Mount Palomar",
-        'location_search_found': "Found: {}",
+        'location_search_found': "Found (Nominatim): {}", # Clarified source
+        'location_search_found_fallback': "Found via Fallback (ArcGIS): {}",
+        'location_search_found_fallback2': "Found via 2nd Fallback (Photon): {}", # NEU
         'location_search_coords': "Lat: {:.4f}, Lon: {:.4f}",
-        'location_search_error_not_found': "Location not found. Try a more specific name.",
-        'location_search_error_service': "Geocoding service error: {}",
-        'location_search_error_timeout': "Geocoding service timed out. Please try again.", # Added
-        'location_search_error_refused': "Geocoding connection refused. Server busy or IP blocked? Check User-Agent/Rate Limits.", # Added Specific
+        'location_search_error_not_found': "Location not found using Nominatim, ArcGIS, or Photon.", # Updated
+        'location_search_error_service': "Geocoding service error (Nominatim): {}",
+        'location_search_error_timeout': "Geocoding service timed out (Nominatim).",
+        'location_search_error_refused': "Geocoding connection refused (Nominatim). Server busy or IP blocked?",
+        'location_search_info_fallback': "Nominatim failed, trying Fallback service (ArcGIS)...",
+        'location_search_info_fallback2': "ArcGIS failed, trying 2nd Fallback service (Photon)...", # NEU
+        'location_search_error_fallback_failed': "Primary (Nominatim) and Fallback (ArcGIS) failed: {}",
+        'location_search_error_fallback2_failed': "All geocoding services (Nominatim, ArcGIS, Photon) failed: {}", # NEU
         'location_lat_label': "Latitude (°N)",
         'location_lon_label': "Longitude (°E)",
         'location_elev_label': "Elevation (Meters)",
@@ -190,11 +196,11 @@ translations = {
         'search_params_direction_all': "All",
         'spinner_searching': "Calculating window & searching objects...",
         'spinner_geocoding': "Searching for location...",
-        'window_info_template': "Observation window: {} to {} UTC (Astronomical Twilight)", # Updated template
-        'window_already_passed': "Calculated night window has already passed for 'Now'. Calculating for next night.", # Added
-        'error_no_window': "No valid astronomical darkness window found for the selected date and location.", # More specific
-        'error_polar_night': "Astronomical darkness persists for >24h (polar night?). Using fallback window.", # NEU
-        'error_polar_day': "No astronomical darkness occurs (polar day?). Using fallback window.", # NEU
+        'window_info_template': "Observation window: {} to {} UTC (Astronomical Twilight)",
+        'window_already_passed': "Calculated night window has already passed for 'Now'. Calculating for next night.",
+        'error_no_window': "No valid astronomical darkness window found for the selected date and location.",
+        'error_polar_night': "Astronomical darkness persists for >24h (polar night?). Using fallback window.",
+        'error_polar_day': "No astronomical darkness occurs (polar day?). Using fallback window.",
         'success_objects_found': "{} matching objects found.",
         'info_showing_list_duration': "Showing {} objects, sorted by visibility duration and peak altitude:",
         'info_showing_list_magnitude': "Showing {} objects, sorted by brightness (brightest first):",
@@ -221,14 +227,14 @@ translations = {
         'results_best_time_header': "**Best Time (Local TZ):**",
         'results_cont_duration_header': "**Max. Cont. Duration:**",
         'results_duration_value': "{:.1f} hours",
-        'graph_type_label': "Graph Type (for all graphs):", # Renamed & Clarified scope
-        'graph_type_sky_path': "Sky Path (Az/Alt)", # Renamed
-        'graph_type_alt_time': "Altitude/Time", # Renamed
-        'results_graph_button': "📈 Show Graph", # Renamed
-        'results_spinner_plotting': "Creating graph...", # Renamed
-        'results_graph_error': "Graph Error: {}", # Renamed
-        'results_graph_not_created': "Graph could not be created.", # Renamed
-        'results_close_graph_button': "Close Graph", # Renamed
+        'graph_type_label': "Graph Type (for all graphs):",
+        'graph_type_sky_path': "Sky Path (Az/Alt)",
+        'graph_type_alt_time': "Altitude/Time",
+        'results_graph_button': "📈 Show Graph",
+        'results_spinner_plotting': "Creating graph...",
+        'results_graph_error': "Graph Error: {}",
+        'results_graph_not_created': "Graph could not be created.",
+        'results_close_graph_button': "Close Graph",
         'results_save_csv_button': "💾 Save Result List as CSV",
         'results_csv_filename': "dso_observation_list_{}.csv",
         'results_csv_export_error': "CSV Export Error: {}",
@@ -252,12 +258,11 @@ translations = {
         'error_processing_object': "Error processing {}: {}",
         'window_calc_error': "Error calculating observation window: {}\n{}",
         'window_fallback_info': "\nUsing fallback window: {} to {} UTC",
-        # Removed unused window messages
         'error_loading_catalog': "Error loading catalog file: {}",
         'info_catalog_loaded': "Catalog loaded: {} objects.",
         'warning_catalog_empty': "Catalog file loaded, but no suitable objects found after filtering.",
      },
-     'de': {
+     'de': { # German Translations
         'page_title': "Erweiterter DSO Finder",
         'settings_header': "Einstellungen",
         'language_select_label': "Sprache / Language / Langue",
@@ -268,12 +273,18 @@ translations = {
         'location_search_label': "Ortsnamen eingeben:",
         'location_search_submit_button': "Koordinaten finden",
         'location_search_placeholder': "z.B. Berlin, Deutschland oder Calar Alto",
-        'location_search_found': "Gefunden: {}",
+        'location_search_found': "Gefunden (Nominatim): {}", # Clarified source
+        'location_search_found_fallback': "Gefunden via Fallback (ArcGIS): {}",
+        'location_search_found_fallback2': "Gefunden via 2. Fallback (Photon): {}", # NEU
         'location_search_coords': "Breite: {:.4f}, Länge: {:.4f}",
-        'location_search_error_not_found': "Ort nicht gefunden. Versuche einen spezifischeren Namen.",
-        'location_search_error_service': "Fehler beim Geocoding-Dienst: {}",
-        'location_search_error_timeout': "Zeitüberschreitung beim Geocoding-Dienst. Bitte erneut versuchen.", # Added
-        'location_search_error_refused': "Geocoding-Verbindung abgelehnt. Server ausgelastet oder IP blockiert? User-Agent/Rate-Limits prüfen.", # Added Specific
+        'location_search_error_not_found': "Ort nicht gefunden (via Nominatim, ArcGIS oder Photon).", # Updated
+        'location_search_error_service': "Fehler beim Geocoding-Dienst (Nominatim): {}",
+        'location_search_error_timeout': "Zeitüberschreitung beim Geocoding-Dienst (Nominatim).",
+        'location_search_error_refused': "Geocoding-Verbindung abgelehnt (Nominatim). Server ausgelastet oder IP blockiert?",
+        'location_search_info_fallback': "Nominatim fehlgeschlagen, versuche Fallback-Dienst (ArcGIS)...",
+        'location_search_info_fallback2': "ArcGIS fehlgeschlagen, versuche 2. Fallback-Dienst (Photon)...", # NEU
+        'location_search_error_fallback_failed': "Primärer (Nominatim) und Fallback (ArcGIS) fehlgeschlagen: {}",
+        'location_search_error_fallback2_failed': "Alle Geocoding-Dienste (Nominatim, ArcGIS, Photon) fehlgeschlagen: {}", # NEU
         'location_lat_label': "Breitengrad (°N)",
         'location_lon_label': "Längengrad (°E)",
         'location_elev_label': "Höhe (Meter)",
@@ -346,11 +357,11 @@ translations = {
         'search_params_direction_all': "Alle",
         'spinner_searching': "Berechne Fenster & suche Objekte...",
         'spinner_geocoding': "Suche nach Ort...",
-        'window_info_template': "Beobachtungsfenster: {} bis {} UTC (Astronomische Dämmerung)", # Updated template
-        'window_already_passed': "Berechnetes Nachtfenster für 'Jetzt' liegt in der Vergangenheit. Berechne für die nächste Nacht.", # Added
-        'error_no_window': "Kein gültiges astronomisches Dämmerungsfenster für gewähltes Datum und Ort gefunden.", # More specific
-        'error_polar_night': "Astronomische Dunkelheit dauert >24h an (Polarnacht?). Nutze Fallback-Fenster.", # NEU
-        'error_polar_day': "Keine astronomische Dunkelheit vorhanden (Polartag?). Nutze Fallback-Fenster.", # NEU
+        'window_info_template': "Beobachtungsfenster: {} bis {} UTC (Astronomische Dämmerung)",
+        'window_already_passed': "Berechnetes Nachtfenster für 'Jetzt' liegt in der Vergangenheit. Berechne für die nächste Nacht.",
+        'error_no_window': "Kein gültiges astronomisches Dämmerungsfenster für gewähltes Datum und Ort gefunden.",
+        'error_polar_night': "Astronomische Dunkelheit dauert >24h an (Polarnacht?). Nutze Fallback-Fenster.",
+        'error_polar_day': "Keine astronomische Dunkelheit vorhanden (Polartag?). Nutze Fallback-Fenster.",
         'success_objects_found': "{} passende Objekte gefunden.",
         'info_showing_list_duration': "Anzeige von {} Objekten, sortiert nach Sichtbarkeitsdauer und max. Höhe:",
         'info_showing_list_magnitude': "Anzeige von {} Objekten, sortiert nach Helligkeit (hellste zuerst):",
@@ -377,14 +388,14 @@ translations = {
         'results_best_time_header': "**Beste Zeit (Lokale ZZ):**",
         'results_cont_duration_header': "**Max. kont. Dauer:**",
         'results_duration_value': "{:.1f} Stunden",
-        'graph_type_label': "Grafik-Typ (für alle Grafiken):", # Renamed & Clarified scope
-        'graph_type_sky_path': "Himmelsbahn (Az/Alt)", # Renamed
-        'graph_type_alt_time': "Höhenverlauf (Alt/Zeit)", # Renamed
-        'results_graph_button': "📈 Grafik anzeigen", # Renamed
-        'results_spinner_plotting': "Erstelle Grafik...", # Renamed
-        'results_graph_error': "Grafik Fehler: {}", # Renamed
-        'results_graph_not_created': "Grafik konnte nicht erstellt werden.", # Renamed
-        'results_close_graph_button': "Grafik schliessen", # Renamed
+        'graph_type_label': "Grafik-Typ (für alle Grafiken):",
+        'graph_type_sky_path': "Himmelsbahn (Az/Alt)",
+        'graph_type_alt_time': "Höhenverlauf (Alt/Zeit)",
+        'results_graph_button': "📈 Grafik anzeigen",
+        'results_spinner_plotting': "Erstelle Grafik...",
+        'results_graph_error': "Grafik Fehler: {}",
+        'results_graph_not_created': "Grafik konnte nicht erstellt werden.",
+        'results_close_graph_button': "Grafik schliessen",
         'results_save_csv_button': "💾 Ergebnisliste als CSV speichern",
         'results_csv_filename': "dso_beobachtungsliste_{}.csv",
         'results_csv_export_error': "CSV Export Fehler: {}",
@@ -396,24 +407,23 @@ translations = {
         'graph_title_sky_path': "Himmelsbahn für {}",
         'graph_title_alt_time': "Höhenverlauf für {}",
         'graph_ylabel': "Höhe (°)",
-        'custom_target_expander': "Eigenes Ziel grafisch darstellen", # NEU
-        'custom_target_ra_label': "Rektaszension (RA):", # NEU
-        'custom_target_dec_label': "Deklination (Dec):", # NEU
-        'custom_target_name_label': "Ziel-Name (Optional):", # NEU
-        'custom_target_ra_placeholder': "z.B. 10:45:03.6 oder 161.265", # NEU
-        'custom_target_dec_placeholder': "z.B. -16:42:58 oder -16.716", # NEU
-        'custom_target_button': "Eigene Grafik erstellen", # NEU
-        'custom_target_error_coords': "Ungültiges RA/Dec Format. Verwende HH:MM:SS.s / DD:MM:SS oder Dezimalgrad.", # NEU
-        'custom_target_error_window': "Grafik kann nicht erstellt werden. Stelle sicher, dass Ort und Zeitfenster gültig sind (ggf. zuerst 'Beobachtbare Objekte finden' klicken).", # NEU
+        'custom_target_expander': "Eigenes Ziel grafisch darstellen",
+        'custom_target_ra_label': "Rektaszension (RA):",
+        'custom_target_dec_label': "Deklination (Dec):",
+        'custom_target_name_label': "Ziel-Name (Optional):",
+        'custom_target_ra_placeholder': "z.B. 10:45:03.6 oder 161.265",
+        'custom_target_dec_placeholder': "z.B. -16:42:58 oder -16.716",
+        'custom_target_button': "Eigene Grafik erstellen",
+        'custom_target_error_coords': "Ungültiges RA/Dec Format. Verwende HH:MM:SS.s / DD:MM:SS oder Dezimalgrad.",
+        'custom_target_error_window': "Grafik kann nicht erstellt werden. Stelle sicher, dass Ort und Zeitfenster gültig sind (ggf. zuerst 'Beobachtbare Objekte finden' klicken).",
         'error_processing_object': "Fehler bei Verarbeitung von {}: {}",
         'window_calc_error': "Fehler bei der Berechnung des Beobachtungsfensters: {}\n{}",
         'window_fallback_info': "\nVerwende Fallback-Fenster: {} bis {} UTC",
-        # Removed unused window messages
         'error_loading_catalog': "Fehler beim Laden der Katalogdatei: {}",
         'info_catalog_loaded': "Katalog geladen: {} Objekte.",
         'warning_catalog_empty': "Katalogdatei geladen, aber keine passenden Objekte nach Filterung gefunden.",
      },
-     'fr': {
+     'fr': { # French Translations
         'page_title': "Chercheur d'objets du ciel profond avancé",
         'settings_header': "Paramètres",
         'language_select_label': "Langue / Language / Sprache",
@@ -424,12 +434,18 @@ translations = {
         'location_search_label': "Entrer le nom du lieu :",
         'location_search_submit_button': "Trouver les coordonnées",
         'location_search_placeholder': "ex: Paris, France ou Mont Palomar",
-        'location_search_found': "Trouvé : {}",
+        'location_search_found': "Trouvé (Nominatim): {}", # Clarified source
+        'location_search_found_fallback': "Trouvé via Fallback (ArcGIS) : {}",
+        'location_search_found_fallback2': "Trouvé via 2ème Fallback (Photon) : {}", # NEU
         'location_search_coords': "Lat : {:.4f}, Lon : {:.4f}",
-        'location_search_error_not_found': "Lieu non trouvé. Essayez un nom plus spécifique.",
-        'location_search_error_service': "Erreur du service de géocodage : {}",
-        'location_search_error_timeout': "Le service de géocodage a expiré. Veuillez réessayer.", # Added
-        'location_search_error_refused': "Connexion de géocodage refusée. Serveur occupé ou IP bloquée ? Vérifiez User-Agent/Limites de taux.", # Added Specific
+        'location_search_error_not_found': "Lieu non trouvé (via Nominatim, ArcGIS ou Photon).", # Updated
+        'location_search_error_service': "Erreur du service de géocodage (Nominatim) : {}",
+        'location_search_error_timeout': "Le service de géocodage (Nominatim) a expiré.",
+        'location_search_error_refused': "Connexion de géocodage (Nominatim) refusée. Serveur occupé ou IP bloquée ?",
+        'location_search_info_fallback': "Échec de Nominatim, tentative de service de secours (ArcGIS)...",
+        'location_search_info_fallback2': "Échec de ArcGIS, tentative de 2ème service de secours (Photon)...", # NEU
+        'location_search_error_fallback_failed': "Échec des services primaire (Nominatim) et de secours (ArcGIS) : {}",
+        'location_search_error_fallback2_failed': "Échec de tous les services de géocodage (Nominatim, ArcGIS, Photon) : {}", # NEU
         'location_lat_label': "Latitude (°N)",
         'location_lon_label': "Longitude (°E)",
         'location_elev_label': "Altitude (Mètres)",
@@ -502,11 +518,11 @@ translations = {
         'search_params_direction_all': "Toutes",
         'spinner_searching': "Calcul de la fenêtre & recherche d'objets...",
         'spinner_geocoding': "Recherche du lieu...",
-        'window_info_template': "Fenêtre d'observation : {} à {} UTC (Crépuscule Astronomique)", # Updated template
-        'window_already_passed': "La fenêtre nocturne calculée pour 'Maintenant' est déjà passée. Calcul pour la nuit suivante.", # Added
-        'error_no_window': "Aucune fenêtre d'obscurité astronomique valide trouvée pour la date et le lieu sélectionnés.", # More specific
-        'error_polar_night': "L'obscurité astronomique persiste >24h (nuit polaire ?). Utilisation de la fenêtre de repli.", # NEU
-        'error_polar_day': "Aucune obscurité astronomique (jour polaire ?). Utilisation de la fenêtre de repli.", # NEU
+        'window_info_template': "Fenêtre d'observation : {} à {} UTC (Crépuscule Astronomique)",
+        'window_already_passed': "La fenêtre nocturne calculée pour 'Maintenant' est déjà passée. Calcul pour la nuit suivante.",
+        'error_no_window': "Aucune fenêtre d'obscurité astronomique valide trouvée pour la date et le lieu sélectionnés.",
+        'error_polar_night': "L'obscurité astronomique persiste >24h (nuit polaire ?). Utilisation de la fenêtre de repli.",
+        'error_polar_day': "Aucune obscurité astronomique (jour polaire ?). Utilisation de la fenêtre de repli.",
         'success_objects_found': "{} objets correspondants trouvés.",
         'info_showing_list_duration': "Affichage de {} objets, triés par durée de visibilité et altitude maximale :",
         'info_showing_list_magnitude': "Affichage de {} objets, triés par luminosité (les plus brillants d'abord) :",
@@ -533,7 +549,7 @@ translations = {
         'results_best_time_header': "**Meilleure Heure (FH Local) :**",
         'results_cont_duration_header': "**Durée Cont. Max. :**",
         'results_duration_value': "{:.1f} heures",
-        'graph_type_label': "Type de Graphique (pour tous) :", # Clarified scope
+        'graph_type_label': "Type de Graphique (pour tous) :",
         'graph_type_sky_path': "Tracé Céleste (Az/Alt)",
         'graph_type_alt_time': "Altitude/Temps",
         'results_graph_button': "📈 Afficher le graphique",
@@ -552,19 +568,18 @@ translations = {
         'graph_title_sky_path': "Tracé Céleste pour {}",
         'graph_title_alt_time': "Profil d'Altitude pour {}",
         'graph_ylabel': "Altitude (°)",
-        'custom_target_expander': "Tracer une cible personnalisée", # NEU
-        'custom_target_ra_label': "Ascension Droite (AD) :", # NEU
-        'custom_target_dec_label': "Déclinaison (Dec) :", # NEU
-        'custom_target_name_label': "Nom de la cible (Optionnel) :", # NEU
-        'custom_target_ra_placeholder': "ex : 10:45:03.6 ou 161.265", # NEU
-        'custom_target_dec_placeholder': "ex : -16:42:58 ou -16.716", # NEU
-        'custom_target_button': "Générer le graphique personnalisé", # NEU
-        'custom_target_error_coords': "Format AD/Dec invalide. Utilisez HH:MM:SS.s / DD:MM:SS ou degrés décimaux.", # NEU
-        'custom_target_error_window': "Impossible de générer le graphique. Assurez-vous que le lieu est défini et que la fenêtre d'observation est calculée (cliquez sur 'Trouver les Objets Observables' si nécessaire).", # NEU
+        'custom_target_expander': "Tracer une cible personnalisée",
+        'custom_target_ra_label': "Ascension Droite (AD) :",
+        'custom_target_dec_label': "Déclinaison (Dec) :",
+        'custom_target_name_label': "Nom de la cible (Optionnel) :",
+        'custom_target_ra_placeholder': "ex : 10:45:03.6 ou 161.265",
+        'custom_target_dec_placeholder': "ex : -16:42:58 ou -16.716",
+        'custom_target_button': "Générer le graphique personnalisé",
+        'custom_target_error_coords': "Format AD/Dec invalide. Utilisez HH:MM:SS.s / DD:MM:SS ou degrés décimaux.",
+        'custom_target_error_window': "Impossible de générer le graphique. Assurez-vous que le lieu est défini et que la fenêtre d'observation est calculée (cliquez sur 'Trouver les Objets Observables' si nécessaire).",
         'error_processing_object': "Erreur lors du traitement de {}: {}",
         'window_calc_error': "Erreur lors du calcul de la fenêtre d'observation : {}\n{}",
         'window_fallback_info': "\nUtilisation de la fenêtre de repli : {} à {} UTC",
-        # Removed unused window messages
         'error_loading_catalog': "Erreur lors du chargement du fichier catalogue : {}",
         'info_catalog_loaded': "Catalogue chargé : {} objets.",
         'warning_catalog_empty': "Fichier catalogue chargé, mais aucun objet approprié trouvé après filtrage.",
@@ -572,10 +587,12 @@ translations = {
 }
 
 # --- Global Configuration & Initial Values ---
-INITIAL_LAT = 47.17 # Default to Schötz, Switzerland
+# Removed default location name, keeps coordinates
+INITIAL_LAT = 47.17
 INITIAL_LON = 8.01
 INITIAL_HEIGHT = 550
 INITIAL_TIMEZONE = "Europe/Zurich" # Fallback if auto-detection fails initially
+APP_VERSION = "v6.1-hotfix" # Manual version for now
 
 # --- Path to Catalog File ---
 # WICHTIG: Die Katalogdatei (z.B. 'ongc.csv') muss sich im selben Verzeichnis
@@ -628,7 +645,7 @@ def initialize_session_state():
         'manual_lat_val': INITIAL_LAT,
         'manual_lon_val': INITIAL_LON,
         'manual_height_val': INITIAL_HEIGHT,
-        'location_search_query': "Schötz", # Pre-fill with user's location
+        'location_search_query': "", # *** FIX: Removed default "Schötz" ***
         'searched_location_name': None,
         'location_search_status_msg': "",
         'location_search_success': False,
@@ -817,37 +834,23 @@ def find_observable_objects(
     location: 'EarthLocation',
     observing_times: 'Time',
     min_altitude_limit: 'u.Quantity',
-    magnitude_filter_mode: str,
-    bortle_scale: int,
-    manual_min_mag: float | None,
-    manual_max_mag: float | None,
-    selected_object_types: list, # Empty list means all types
-    df_catalog: pd.DataFrame,
+    # magnitude_filter_mode: str, # No longer needed here, applied before call
+    # bortle_scale: int, # No longer needed here
+    # manual_min_mag: float | None, # No longer needed here
+    # manual_max_mag: float | None, # No longer needed here
+    # selected_object_types: list, # No longer needed here, applied before call
+    df_search_subset: pd.DataFrame, # Pass the pre-filtered DataFrame
     lang: str
 ) -> list:
     """
-    Finds DSOs from the catalog DataFrame visible during the observing_times.
+    Finds DSOs from the pre-filtered catalog DataFrame visible during the observing_times.
     Calculates max continuous visibility duration within the dark window.
+    Assumes df_search_subset is already filtered by type and magnitude.
     """
     t = translations[lang]
     observable_objects = []
-    magnitude_limit = None
+    # magnitude_limit = None # Magnitude filter already applied
     MAX_REALISTIC_NIGHT_DURATION = 16.0 # Hours, simple cap for duration display
-
-    # Determine magnitude limit based on filter mode
-    if magnitude_filter_mode == 'Bortle Scale':
-        magnitude_limit = get_magnitude_limit(bortle_scale)
-    elif magnitude_filter_mode == 'Manual':
-        # Ensure min/max are valid numbers and in correct order
-        is_min_valid = isinstance(manual_min_mag, (int, float))
-        is_max_valid = isinstance(manual_max_mag, (int, float))
-        if is_min_valid and is_max_valid:
-            if manual_min_mag > manual_max_mag:
-                # Swap if min > max
-                manual_min_mag, manual_max_mag = manual_max_mag, manual_min_mag
-        else:
-            # If either is invalid, disable manual magnitude filter
-             manual_min_mag = None; manual_max_mag = None
 
     # Pre-calculate AltAz frame for the entire observation window
     altaz_frame = AltAz(obstime=observing_times, location=location)
@@ -855,24 +858,16 @@ def find_observable_objects(
     # Handle case with only one time step (or zero)
     time_step_duration = (observing_times[1] - observing_times[0]).to(u.hour).value if len(observing_times) > 1 else 0
 
-    # Iterate through the pre-filtered catalog DataFrame
-    for index, row in df_catalog.iterrows():
+    # Iterate through the *pre-filtered* catalog DataFrame
+    # This loop should be significantly smaller if filters were effective
+    for index, row in df_search_subset.iterrows():
         # Extract object data from the row
         name = row['Name']; ra_str = row['RA_str']; dec_str = row['Dec_str']
         mag = row['Mag']; obj_type = row['Type']
         # Constellation will be fetched using astropy's get_constellation
 
-        # --- Apply Filters ---
-        # Filter by object type if a selection is made
-        if selected_object_types and obj_type not in selected_object_types: continue
-        # Filter by magnitude (ensure magnitude is a valid number)
-        if not isinstance(mag, (int, float)): continue # Skip if magnitude is not numeric
-        if magnitude_filter_mode == 'Bortle Scale':
-            if magnitude_limit is not None and mag > magnitude_limit: continue
-        elif magnitude_filter_mode == 'Manual':
-            if manual_min_mag is not None and manual_max_mag is not None:
-                # Apply manual range filter
-                if not (manual_min_mag <= mag <= manual_max_mag): continue
+        # --- Filters already applied before calling this function ---
+        # No need to check type or magnitude again here
 
         # --- Calculate Observability ---
         try:
@@ -1007,10 +1002,10 @@ def plot_altitude_time(_obj_data: dict, _location_tuple: tuple, lang: str, tz_na
             xlabel = "Time (UTC)"
 
         # --- Plotting Data ---
-        # Plot altitude vs local time
-        ax.plot(times_local_dt, altitudes, label=t['graph_altitude_label'], color='#00C0F0', linewidth=2) # Cyan line
-        # Plot minimum altitude threshold line
-        ax.axhline(min_alt_limit, color='#FF6347', linestyle='--', label=t['graph_min_altitude_label'].format(min_alt_limit)) # Tomato color dashed line
+        # *** COLOR CHANGE: Use user color for main line ***
+        ax.plot(times_local_dt, altitudes, label=t['graph_altitude_label'], color='#C1EDBE', linewidth=2) # User color line
+        # *** COLOR CHANGE: Use RED for min alt line ***
+        ax.axhline(min_alt_limit, color='#FF6347', linestyle='--', label=t['graph_min_altitude_label'].format(min_alt_limit)) # RED dashed line
 
         # --- Axis Setup ---
         ax.set_ylim(0, 90) # Altitude range 0-90 degrees
@@ -1086,8 +1081,7 @@ def plot_sky_path(_obj_data: dict, _location_tuple: tuple, lang: str, tz_name: s
 
         # --- Plotting Data ---
         # Use scatter plot: Azimuth (X) vs Altitude (Y)
-        # Color points based on azimuth using a reversed colormap (viridis_r)
-        # s=size, zorder=drawing order, alpha=transparency
+        # Keep colormap for path as color indicates azimuth
         scatter = ax.scatter(plot_azimuths, plot_altitudes, c=plot_azimuths, cmap='viridis_r', s=25, zorder=3, alpha=0.8)
 
         # Add a color bar to show the mapping of color to azimuth
@@ -1107,8 +1101,8 @@ def plot_sky_path(_obj_data: dict, _location_tuple: tuple, lang: str, tz_name: s
                         bbox=dict(facecolor='black', alpha=0.7, pad=0.2, edgecolor='none')) # Semi-transparent black background
                 last_hour = current_hour # Update last marked hour
 
-        # Add minimum altitude line
-        ax.axhline(min_alt_limit, color='#FF6347', linestyle='--', label=t['graph_min_altitude_label'].format(min_alt_limit)) # Tomato color dashed line
+        # *** COLOR CHANGE: Use RED for min alt line ***
+        ax.axhline(min_alt_limit, color='#FF6347', linestyle='--', label=t['graph_min_altitude_label'].format(min_alt_limit)) # RED dashed line
 
         # --- Axis Setup ---
         ax.set_xlabel(t['graph_azimuth_label']) # Azimuth label
@@ -1286,7 +1280,7 @@ df_catalog_data = load_ongc_data(CATALOG_FILEPATH, lang)
 
 
 # --- Custom CSS Styling ---
-# Updated colors for a more modern dark theme
+# Updated colors for a more modern dark theme + user color #C1EDBE
 st.markdown("""
 <style>
     /* Base container styling */
@@ -1298,8 +1292,9 @@ st.markdown("""
     }
     /* Primary Button Styling (e.g., Find Objects) */
     div[data-testid="stButton"] > button:not([kind="secondary"]) {
-        background-image: linear-gradient(to right, #087990, #055160); /* Teal gradient */
-        color: white; /* White text */
+        /* *** COLOR CHANGE: Use user color gradient, black text *** */
+        background-image: linear-gradient(to right, #C1EDBE, #a8d7a4); /* User color gradient */
+        color: #111111; /* Black text for contrast */
         border: none; /* No border */
         padding: 10px 24px; /* Padding */
         text-align: center; /* Center text */
@@ -1312,11 +1307,12 @@ st.markdown("""
     }
     /* Primary Button Hover Effect */
     div[data-testid="stButton"] > button:not([kind="secondary"]):hover {
-        background-image: linear-gradient(to right, #055160, #032a31); /* Darker teal on hover */
-        color: white;
+         /* *** COLOR CHANGE: Darker user color gradient *** */
+        background-image: linear-gradient(to right, #a8d7a4, #8fcb8a); /* Darker user color gradient */
+        color: #000000; /* Black text */
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Larger shadow on hover */
     }
-    /* Secondary Button Styling (e.g., Close Graph) */
+    /* Secondary Button Styling (e.g., Close Graph) - Remains grey */
      div[data-testid="stButton"] > button[kind="secondary"] {
          background-color: #4a4a4a; /* Dark grey */
          color: #e0e0e0; /* Light grey text */
@@ -1330,11 +1326,9 @@ st.markdown("""
          color: white;
          border: 1px solid #888;
      }
-     /* Form Submit Button (e.g., Find Coordinates) - Inherits primary style by default */
+     /* Form Submit Button (e.g., Find Coordinates) - Inherits primary style */
      div[data-testid="stFormSubmitButton"] > button {
          margin-top: 28px; /* Keep vertical alignment with input above */
-         /* Example: Override with a different gradient if needed */
-         /* background-image: linear-gradient(to right, #5a189a, #3c096c); */
      }
     /* Expander Header Styling */
     .streamlit-expanderHeader {
@@ -1370,9 +1364,33 @@ st.markdown("""
         background-color: #555; /* Dark grey track */
     }
     /* Slider Thumb Styling */
-    div[data-testid="stSlider"] div[data-baseweb="slider"] > div:last-child {
-        background-color: #087990; /* Teal thumb */
+    /* Targets the thumb element */
+    div[data-testid="stSlider"] div[data-baseweb="slider"] > div:nth-child(3) {
+         /* *** COLOR CHANGE: Use user color for thumb *** */
+        background-color: #C1EDBE !important;
     }
+    /* Slider Range Track Styling (the 'bar') */
+    /* Targets the track showing the selected range/value */
+     div[data-testid="stSlider"] div[data-baseweb="slider"] > div:nth-child(2) {
+          /* *** COLOR CHANGE: Use user color for track bar *** */
+         background-color: #C1EDBE !important;
+     }
+     /* Slider Value Text Color (Above Thumb) */
+     /* Targets the text label showing the current value */
+     div[data-testid="stSlider"] div[data-baseweb="slider"] > div:nth-child(4) { /* This selector might change with Streamlit versions */
+         /* *** COLOR CHANGE: Use dark text for slider value *** */
+         color: #111111 !important; /* Dark text for readability on light green background */
+     }
+     /* Slider Min/Max Labels Color */
+     /* Targets the divs likely holding the min/max labels at the ends */
+     /* Sets color back to light grey for readability against dark background */
+     div[data-testid="stSlider"] div[data-baseweb="slider"] > div:first-child,
+     div[data-testid="stSlider"] div[data-baseweb="slider"] > div:last-child {
+         /* *** FIX: Light text for min/max labels on dark background *** */
+         color: #e0e0e0 !important;
+         background-color: transparent !important; /* Ensure no background color interferes */
+         /* z-index: 1; /* Probably not needed anymore */ */
+     }
 
 </style>
 """, unsafe_allow_html=True)
@@ -1380,6 +1398,8 @@ st.markdown("""
 # --- Title ---
 # Static English Title - avoids changing with language selection
 st.title("Advanced DSO Finder")
+# Display App Version (manual for now)
+st.caption(f"Version: {APP_VERSION}")
 
 # --- Object Type Glossary (Moved near top for visibility) ---
 with st.expander(t['object_type_glossary_title']):
@@ -1490,6 +1510,7 @@ with st.sidebar:
             # Use a form for the search input and button
             with st.form("location_search_form"):
                 # Text input for location name, key matches session state
+                # Default value is now empty string "" from initialize_session_state
                 st.text_input(t['location_search_label'], key="location_search_query", placeholder=t['location_search_placeholder'])
                 # Form submit button
                 location_search_form_submitted = st.form_submit_button(t['location_search_submit_button'])
@@ -1500,70 +1521,164 @@ with st.sidebar:
 
             # Display previous search status message if it exists
             if st.session_state.location_search_status_msg:
-                 if "Error" in st.session_state.location_search_status_msg or "Fehler" in st.session_state.location_search_status_msg or "not found" in st.session_state.location_search_status_msg or "non trouvé" in st.session_state.location_search_status_msg or "refused" in st.session_state.location_search_status_msg.lower() or "abgelehnt" in st.session_state.location_search_status_msg.lower():
+                 # Check for error keywords or fallback success
+                 if any(err_key in st.session_state.location_search_status_msg.lower() for err_key in ["error", "fehler", "not found", "non trouvé", "refused", "abgelehnt", "fehlgeschlagen"]):
                      status_placeholder.error(st.session_state.location_search_status_msg)
-                 else:
+                 elif "Fallback" in st.session_state.location_search_status_msg: # Show fallback success as info
+                     status_placeholder.info(st.session_state.location_search_status_msg)
+                 else: # Regular success
                      status_placeholder.success(st.session_state.location_search_status_msg)
 
             # Process form submission if button was clicked and query is not empty
             if location_search_form_submitted and st.session_state.location_search_query:
+                location = None # Reset location variable
+                service_used = None # Track which service succeeded
+                final_error = None # Store the final error if all fail
+
                 with st.spinner(t['spinner_geocoding']): # Show spinner during search
+                    query = st.session_state.location_search_query
+                    user_agent_str = f"AdvancedDSOFinder/{random.randint(1000,9999)}/streamlit_app_{datetime.now().timestamp()}"
+
+                    # --- Try Nominatim First ---
                     try:
-                        # *** FIX: Instantiate Nominatim with a unique User-Agent ***
-                        # Create a unique User-Agent string for each request
-                        # Include app name, a random element, and timestamp
-                        user_agent_str = f"AdvancedDSOFinder/{random.randint(1000,9999)}/streamlit_app_{datetime.now().timestamp()}"
+                        print("Trying Nominatim...")
                         geolocator = Nominatim(user_agent=user_agent_str)
-
-                        query = st.session_state.location_search_query
-                        # Perform geocoding request with a timeout (e.g., 15 seconds)
-                        location = geolocator.geocode(query, timeout=15)
-
+                        location = geolocator.geocode(query, timeout=10)
                         if location:
-                            # Location found successfully
-                            found_lat = location.latitude; found_lon = location.longitude; found_name = location.address
-                            # Update session state with found coordinates and name
-                            st.session_state.searched_location_name = found_name
-                            st.session_state.location_search_success = True
-                            st.session_state.manual_lat_val = found_lat # Update manual fields as well
-                            st.session_state.manual_lon_val = found_lon
-                            # Format success message
-                            coord_str = t['location_search_coords'].format(found_lat, found_lon)
-                            st.session_state.location_search_status_msg = f"{t['location_search_found'].format(found_name)}\n({coord_str})"
-                            status_placeholder.success(st.session_state.location_search_status_msg)
-                            location_valid_for_tz = True # Coordinates are now valid
+                            service_used = "Nominatim"
+                            print("Nominatim success.")
                         else:
-                            # Location not found by Nominatim
-                            st.session_state.location_search_success = False; st.session_state.searched_location_name = None
-                            st.session_state.location_search_status_msg = t['location_search_error_not_found']
-                            status_placeholder.error(st.session_state.location_search_status_msg)
-                            location_valid_for_tz = False
+                             print("Nominatim returned None.")
+                             # Don't raise error here, let it proceed to fallback if applicable
 
-                    except GeocoderTimedOut:
-                        # Handle timeout error specifically
-                        st.session_state.location_search_success = False
-                        st.session_state.location_search_status_msg = t['location_search_error_timeout']
-                        status_placeholder.error(st.session_state.location_search_status_msg)
-                        location_valid_for_tz = False
-                    except GeocoderServiceError as e:
-                        # Handle other service errors, including Connection Refused
-                        st.session_state.location_search_success = False
-                        error_details = str(e)
-                        if "Connection refused" in error_details or "111" in error_details:
-                            # Specific message for connection refused
-                            st.session_state.location_search_status_msg = t['location_search_error_refused']
-                        else:
-                            # Generic service error message
-                            st.session_state.location_search_status_msg = t['location_search_error_service'].format(error_details)
-                        status_placeholder.error(st.session_state.location_search_status_msg)
-                        location_valid_for_tz = False
-                    except Exception as e:
-                         # Handle any other unexpected errors during geocoding
-                         st.session_state.location_search_success = False
-                         st.session_state.location_search_status_msg = t['location_search_error_service'].format(f"Unexpected error: {e}")
-                         status_placeholder.error(st.session_state.location_search_status_msg)
-                         location_valid_for_tz = False
-                         traceback.print_exc() # Print traceback for debugging
+                    except (GeocoderTimedOut, GeocoderServiceError) as e:
+                        print(f"Nominatim failed: {e}. Trying fallback 1 (ArcGIS).")
+                        status_placeholder.info(t['location_search_info_fallback']) # Inform user
+                        # --- Try ArcGIS (Fallback 1) ---
+                        try:
+                            fallback_geolocator = ArcGIS(timeout=15)
+                            location = fallback_geolocator.geocode(query, timeout=15)
+                            if location:
+                                service_used = "ArcGIS"
+                                print("ArcGIS success.")
+                            else:
+                                print("ArcGIS returned None.")
+
+                        except (GeocoderTimedOut, GeocoderServiceError) as e2:
+                            print(f"ArcGIS failed: {e2}. Trying fallback 2 (Photon).")
+                            status_placeholder.info(t['location_search_info_fallback2']) # Inform user
+                            # --- Try Photon (Fallback 2) ---
+                            try:
+                                fallback_geolocator2 = Photon(user_agent=user_agent_str, timeout=15) # Add user agent
+                                location = fallback_geolocator2.geocode(query, timeout=15)
+                                if location:
+                                    service_used = "Photon"
+                                    print("Photon success.")
+                                else:
+                                    print("Photon returned None.")
+                                    final_error = GeocoderServiceError("All services failed or returned None.") # Set final error if Photon also returns None
+
+                            except (GeocoderTimedOut, GeocoderServiceError) as e3:
+                                print(f"Photon failed: {e3}. All fallbacks exhausted.")
+                                final_error = e3 # Store the last error
+                            except Exception as e3: # Catch other Photon errors
+                                print(f"Photon failed unexpectedly: {e3}. All fallbacks exhausted.")
+                                final_error = e3
+                        except Exception as e2: # Catch other ArcGIS errors
+                            print(f"ArcGIS failed unexpectedly: {e2}. Trying fallback 2 (Photon).")
+                            status_placeholder.info(t['location_search_info_fallback2']) # Inform user
+                            # --- Try Photon (Fallback 2) ---
+                            try:
+                                fallback_geolocator2 = Photon(user_agent=user_agent_str, timeout=15)
+                                location = fallback_geolocator2.geocode(query, timeout=15)
+                                if location:
+                                    service_used = "Photon"
+                                    print("Photon success.")
+                                else:
+                                     print("Photon returned None.")
+                                     final_error = GeocoderServiceError("All services failed or returned None.")
+                            except (GeocoderTimedOut, GeocoderServiceError) as e3:
+                                 print(f"Photon failed: {e3}. All fallbacks exhausted.")
+                                 final_error = e3
+                            except Exception as e3:
+                                 print(f"Photon failed unexpectedly: {e3}. All fallbacks exhausted.")
+                                 final_error = e3
+
+                    except Exception as e: # Catch other potential errors from Nominatim
+                        print(f"Nominatim failed unexpectedly: {e}. Trying fallback 1 (ArcGIS).")
+                        status_placeholder.info(t['location_search_info_fallback']) # Inform user
+                        # --- Try ArcGIS (Fallback 1) ---
+                        try:
+                            fallback_geolocator = ArcGIS(timeout=15)
+                            location = fallback_geolocator.geocode(query, timeout=15)
+                            if location:
+                                service_used = "ArcGIS"
+                                print("ArcGIS success.")
+                            else:
+                                print("ArcGIS returned None.")
+                                # Try Photon if ArcGIS returns None after Nominatim exception
+                                print("Trying fallback 2 (Photon)...")
+                                status_placeholder.info(t['location_search_info_fallback2'])
+                                try:
+                                    fallback_geolocator2 = Photon(user_agent=user_agent_str, timeout=15)
+                                    location = fallback_geolocator2.geocode(query, timeout=15)
+                                    if location:
+                                        service_used = "Photon"
+                                        print("Photon success.")
+                                    else:
+                                        print("Photon returned None.")
+                                        final_error = GeocoderServiceError("All services failed or returned None.")
+                                except Exception as e3:
+                                    print(f"Photon failed: {e3}. All fallbacks exhausted.")
+                                    final_error = e3
+
+                        except Exception as e2: # Catch ArcGIS errors after Nominatim exception
+                            print(f"ArcGIS failed: {e2}. Trying fallback 2 (Photon).")
+                            status_placeholder.info(t['location_search_info_fallback2'])
+                            # --- Try Photon (Fallback 2) ---
+                            try:
+                                fallback_geolocator2 = Photon(user_agent=user_agent_str, timeout=15)
+                                location = fallback_geolocator2.geocode(query, timeout=15)
+                                if location:
+                                    service_used = "Photon"
+                                    print("Photon success.")
+                                else:
+                                    print("Photon returned None.")
+                                    final_error = GeocoderServiceError("All services failed or returned None.")
+                            except Exception as e3:
+                                 print(f"Photon failed: {e3}. All fallbacks exhausted.")
+                                 final_error = e3
+
+
+                # --- Process final result ---
+                if location and service_used:
+                    found_lat = location.latitude; found_lon = location.longitude; found_name = location.address
+                    st.session_state.searched_location_name = found_name
+                    st.session_state.location_search_success = True
+                    st.session_state.manual_lat_val = found_lat
+                    st.session_state.manual_lon_val = found_lon
+                    coord_str = t['location_search_coords'].format(found_lat, found_lon)
+                    # Choose success message based on which service worked
+                    if service_used == "Nominatim":
+                        st.session_state.location_search_status_msg = f"{t['location_search_found'].format(found_name)}\n({coord_str})"
+                        status_placeholder.success(st.session_state.location_search_status_msg)
+                    elif service_used == "ArcGIS":
+                         st.session_state.location_search_status_msg = f"{t['location_search_found_fallback'].format(found_name)}\n({coord_str})"
+                         status_placeholder.info(st.session_state.location_search_status_msg)
+                    elif service_used == "Photon":
+                         st.session_state.location_search_status_msg = f"{t['location_search_found_fallback2'].format(found_name)}\n({coord_str})"
+                         status_placeholder.info(st.session_state.location_search_status_msg)
+                    location_valid_for_tz = True
+                else: # No location found by any service or an error occurred in the last fallback
+                    st.session_state.location_search_success = False
+                    st.session_state.searched_location_name = None
+                    if final_error:
+                        st.session_state.location_search_status_msg = t['location_search_error_fallback2_failed'].format(final_error)
+                    else: # No error, but no location found
+                        st.session_state.location_search_status_msg = t['location_search_error_not_found']
+                    status_placeholder.error(st.session_state.location_search_status_msg)
+                    location_valid_for_tz = False
+
 
             # If search was previously successful, use the stored coordinates
             if st.session_state.location_search_success:
@@ -2147,13 +2262,42 @@ if st.button(t['find_button_label'], key="find_button", type="primary", use_cont
                     # Calculate min altitude limit as Astropy Quantity here
                     min_alt_limit_calc = st.session_state.min_alt_slider * u.deg
 
-                    # Call the main function to find observable objects
+                    # --- OPTIMIZATION: Pre-filter DataFrame by Magnitude and Type ---
+                    # This reduces the number of objects iterated over in find_observable_objects
+                    df_search_subset = df_catalog_data.copy() # Start with the base loaded data
+                    # Comment: Applying filters here before the main loop improves performance
+                    # Apply magnitude filter to the DataFrame
+                    if magnitude_filter_mode_calc == 'Bortle Scale':
+                        mag_limit_calc = get_magnitude_limit(bortle_calc)
+                        # Keep rows where magnitude is less than or equal to the limit
+                        df_search_subset = df_search_subset[df_search_subset['Mag'] <= mag_limit_calc]
+                    elif magnitude_filter_mode_calc == 'Manual':
+                        # Ensure min/max are valid and ordered before filtering
+                        is_min_valid = isinstance(min_mag_calc, (int, float))
+                        is_max_valid = isinstance(max_mag_calc, (int, float))
+                        if is_min_valid and is_max_valid:
+                            if min_mag_calc > max_mag_calc:
+                                min_mag_calc, max_mag_calc = max_mag_calc, min_mag_calc # Swap if needed
+                            # Keep rows within the manual magnitude range
+                            df_search_subset = df_search_subset[
+                                (df_search_subset['Mag'] >= min_mag_calc) &
+                                (df_search_subset['Mag'] <= max_mag_calc)
+                            ]
+
+                    # Apply type filter (if any types are selected)
+                    if effective_selected_types: # Check if the list is not empty
+                        # Keep rows where the 'Type' is in the selected list
+                        df_search_subset = df_search_subset[df_search_subset['Type'].isin(effective_selected_types)]
+
+                    # --- End of Optimization ---
+
+                    # Call the main function to find observable objects using the *subset* DataFrame
                     # Pass the Observer's location attribute (EarthLocation)
+                    # Remove filters arguments that are now applied before the call
                     all_found_objects = find_observable_objects(
                         current_location_for_run.location, observing_times, min_alt_limit_calc,
-                        magnitude_filter_mode_calc, bortle_calc, min_mag_calc, max_mag_calc,
-                        effective_selected_types, # Use the processed list (empty means all)
-                        df_catalog_data, lang
+                        df_search_subset, # Pass the pre-filtered DataFrame
+                        lang
                     )
                 elif not window_msg: # If no window and no message, show default error
                      st.error(t['error_no_window'])
