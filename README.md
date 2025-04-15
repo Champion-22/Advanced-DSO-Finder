@@ -6,20 +6,28 @@ This application, built with Streamlit, helps find Deep Sky Objects (DSOs) obser
 
 ---
 
+## 🌐 Live Demo
+
+Access the live application here:
+
+**[https://advanced-dso-finder-22.streamlit.app/](https://advanced-dso-finder-22.streamlit.app/)**
+
+---
+
 ## ✨ Key Features
 
 * **External Catalog:** Uses data loaded from a local CSV file (e.g., `ongc.csv` from OpenNGC) containing object information (Name, Type, RA, Dec, Magnitude).
 * **Location Input:**
-    * **Search by Name:** Enter a location name (city, observatory, etc.) to automatically fetch coordinates using geocoding (requires internet).
+    * **Search by Name:** Enter a location name (city, observatory, etc.) to automatically fetch coordinates using geocoding (requires internet, uses Nominatim with ArcGIS and Photon as fallbacks).
     * **Manual Entry:** Input precise longitude, latitude, and altitude.
 * **Time Selection:**
     * Plan for the upcoming night (based on current time).
     * Select any specific date in the past or future.
-* **Automatic Timezone:** Detects and uses the appropriate local timezone based on the provided coordinates (requires `timezonefinder`). Displays the detected timezone.
+* **Automatic Timezone:** Detects and uses the appropriate local timezone based on the provided coordinates (requires `timezonefinder`). Displays the detected timezone in the sidebar.
 * **Brightness Filter:**
     * **Bortle Scale:** Filter based on estimated limiting magnitude for Bortle scale values (1-9).
     * **Manual Range:** Define a specific minimum and maximum magnitude.
-* **Minimum Altitude:** Set the minimum required altitude (degrees above the horizon) for an object to be considered observable.
+* **Altitude Filter:** Set both the **minimum** and **maximum** required altitude (degrees above the horizon) for an object's *peak* to be considered observable.
 * **Object Type Filter:** Select specific DSO types (e.g., Galaxy, Nebula, Cluster) via a multi-select dropdown. An object type glossary is provided for clarity.
 * **Peak Direction Filter:** Optionally filter results to show only objects reaching their maximum altitude in a specific cardinal direction (N, NE, E, SE, S, SW, W, NW) or select "All".
 * **Moon Phase Display & Warning:** Shows the current moon illumination percentage and provides a visual warning if it exceeds a user-defined threshold.
@@ -37,11 +45,11 @@ This application, built with Streamlit, helps find Deep Sky Objects (DSOs) obser
     * Maximum *continuous* duration (in hours) the object is above the minimum altitude during the observation window.
 * **Interactive Graphs:**
     * **Graph Type Selector:** Choose between two graph types globally for all displayed graphs.
-    * **Sky Path Graph (Az/Alt):** Displays the object's path across the sky (Azimuth vs. Altitude) during the observation window. Points are colored by Azimuth, and hourly time markers are shown.
-    * **Altitude/Time Graph:** Displays the object's altitude over time during the observation window.
-    * Graphs are available for each object in the results list and for custom targets.
+    * **Sky Path Graph (Az/Alt):** Displays the object's path across the sky (Azimuth vs. Altitude) during the observation window. Points are colored by time progression. Includes Min/Max altitude limit circles.
+    * **Altitude/Time Graph:** Displays the object's altitude over time during the observation window. Points are colored by Azimuth. Includes Min/Max altitude limit lines.
+    * Graphs are available for each object in the results list (displayed within the object's expander) and for custom targets.
 * **Custom Target Graph:** Input custom RA/Dec coordinates (and an optional name) to generate a visibility graph for any object, using the current location, time, and filter settings.
-* **CSV Export:** Download the filtered and sorted results list (including constellation and visibility duration) as a CSV file (semicolon-separated, UTF-8).
+* **CSV Export:** Download the filtered and sorted results list (including constellation and visibility duration) as a CSV file (semicolon-separated, UTF-8). Uses comma (`,`) as decimal separator for German language, period (`.`) otherwise.
 * **Multilingual:** Interface available in English, German, and French.
 * **Modern Dark Theme:** Uses a custom dark theme for better viewing comfort.
 
