@@ -37,7 +37,7 @@ INITIAL_LAT = 47.17
 INITIAL_LON = 8.01
 INITIAL_HEIGHT = 550
 INITIAL_TIMEZONE = "Europe/Zurich"
-APP_VERSION = "v7.7-modernui" # Updated internal version
+APP_VERSION = "v7.8-lightmodefix" # Updated internal version
 
 # --- Path to Catalog File ---
 try:
@@ -54,6 +54,7 @@ CARDINAL_DIRECTIONS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
 ALL_DIRECTIONS_KEY = 'All' # Internal key for 'All' option
 
 # --- Translations ---
+# Using German as the primary language based on user prompt
 translations = {
     'de': {
         # 'page_title': "Erweiterter DSO Finder", # Removed, title is now fixed
@@ -664,8 +665,9 @@ def create_moon_phase_svg(illumination: float, size: int = 100) -> str:
 
     radius = size / 2
     cx = cy = radius
-    light_color = "#e0e0e0"
-    dark_color = "#333333"
+    # Use CSS variables for theme compatibility (fallback provided)
+    light_color = "var(--text-color, #e0e0e0)" # Use text color for light part
+    dark_color = "var(--secondary-background-color, #333333)" # Use secondary bg for dark part
 
     svg = f'<svg width="{size}" height="{size}" viewBox="0 0 {size} {size}">'
 
@@ -903,9 +905,9 @@ def get_observable_window(observer: Observer, reference_time: Time, is_now: bool
         current_dt_utc = current_utc_time.to_datetime(timezone.utc)
         noon_today_utc = datetime.combine(current_dt_utc.date(), time(12, 0), tzinfo=timezone.utc)
         if current_dt_utc < noon_today_utc:
-             calc_base_time = Time(noon_today_utc - timedelta(days=1))
+            calc_base_time = Time(noon_today_utc - timedelta(days=1))
         else:
-             calc_base_time = Time(noon_today_utc)
+            calc_base_time = Time(noon_today_utc)
         print(f"Calculating 'Now' window based on UTC noon: {calc_base_time.iso}")
     else:
         selected_date_noon_utc = datetime.combine(reference_time.to_datetime(timezone.utc).date(), time(12, 0), tzinfo=timezone.utc)
@@ -921,9 +923,9 @@ def get_observable_window(observer: Observer, reference_time: Time, is_now: bool
         astro_rise = observer.twilight_morning_astronomical(astro_set if astro_set else calc_base_time, which='next')
 
         if astro_set is None or astro_rise is None:
-             raise ValueError("Could not determine one or both astronomical twilight times.")
+            raise ValueError("Could not determine one or both astronomical twilight times.")
         if astro_rise <= astro_set:
-             raise ValueError("Calculated morning twilight is not after evening twilight.")
+            raise ValueError("Calculated morning twilight is not after evening twilight.")
 
         start_time = astro_set
         end_time = astro_rise
@@ -936,14 +938,14 @@ def get_observable_window(observer: Observer, reference_time: Time, is_now: bool
                 astro_rise_next = observer.twilight_morning_astronomical(astro_set_next if astro_set_next else Time(next_noon_utc), which='next')
 
                 if astro_set_next is None or astro_rise_next is None or astro_rise_next <= astro_set_next:
-                     raise ValueError("Could not determine valid twilight times for the *next* night.")
+                    raise ValueError("Could not determine valid twilight times for the *next* night.")
 
                 start_time = astro_set_next
                 end_time = astro_rise_next
 
             elif start_time < current_utc_time:
-                 print(f"Adjusting window start from {start_time.iso} to current time {current_utc_time.iso}")
-                 start_time = current_utc_time
+                print(f"Adjusting window start from {start_time.iso} to current time {current_utc_time.iso}")
+                start_time = current_utc_time
 
         start_fmt = start_time.to_datetime(timezone.utc).strftime('%Y-%m-%d %H:%M %Z')
         end_fmt = end_time.to_datetime(timezone.utc).strftime('%Y-%m-%d %H:%M %Z')
@@ -959,12 +961,12 @@ def get_observable_window(observer: Observer, reference_time: Time, is_now: bool
             if sun_alt_ref < -18*u.deg and sun_alt_12h_later < -18*u.deg:
                 status_message = t['error_polar_night']
             elif sun_alt_ref > -18*u.deg and sun_alt_12h_later > -18*u.deg:
-                 times_check = calc_base_time + np.linspace(0, 24, 49)*u.hour
-                 sun_alts_check = observer.sun_altaz(times_check).alt
-                 if np.min(sun_alts_check) > -18*u.deg:
-                     status_message = t['error_polar_day']
-                 else:
-                     status_message = t['window_calc_error'].format(error_detail, " (Check location/time)")
+                times_check = calc_base_time + np.linspace(0, 24, 49)*u.hour
+                sun_alts_check = observer.sun_altaz(times_check).alt
+                if np.min(sun_alts_check) > -18*u.deg:
+                    status_message = t['error_polar_day']
+                else:
+                    status_message = t['window_calc_error'].format(error_detail, " (Check location/time)")
             else:
                 status_message = t['window_calc_error'].format(error_detail, traceback.format_exc())
         except Exception as check_e:
@@ -982,7 +984,7 @@ def get_observable_window(observer: Observer, reference_time: Time, is_now: bool
 
     if start_time is None or end_time is None or end_time <= start_time:
         if not status_message or "Error" not in status_message and "Fallback" not in status_message:
-             status_message += ("\n" if status_message else "") + t['error_no_window']
+            status_message += ("\n" if status_message else "") + t['error_no_window']
 
         start_time_fb, end_time_fb = _get_fallback_window(calc_base_time)
         if start_time is None or start_time != start_time_fb:
@@ -1087,10 +1089,10 @@ def find_observable_objects(observer_location: EarthLocation,
 
                 # --- Get Constellation ---
                 try:
-                     constellation = get_constellation(dso_coord)
+                    constellation = get_constellation(dso_coord)
                 except Exception as const_err:
-                     print(f"Warning: Could not determine constellation for {dso_name}: {const_err}")
-                     constellation = "N/A"
+                    print(f"Warning: Could not determine constellation for {dso_name}: {const_err}")
+                    constellation = "N/A"
 
                 # --- Calculate Continuous Duration Above Minimum Altitude ---
                 above_min_alt = dso_alts >= min_alt_deg
@@ -1109,7 +1111,7 @@ def find_observable_objects(observer_location: EarthLocation,
                         next_set_idx_candidates = set_indices[set_indices > start_idx]
                         if len(next_set_idx_candidates) == 0:
                             if start_idx < len(observing_times) and above_min_alt[start_idx]: # Check if currently above
-                                 current_runs.append((start_idx, len(observing_times) -1))
+                                current_runs.append((start_idx, len(observing_times) -1))
                             break
 
                         next_set_idx = next_set_idx_candidates[0]
@@ -1117,7 +1119,7 @@ def find_observable_objects(observer_location: EarthLocation,
 
                         next_rise_idx_candidates = rise_indices[rise_indices > next_set_idx]
                         if len(next_rise_idx_candidates) == 0:
-                             break
+                            break
 
                         start_idx = next_rise_idx_candidates[0]
 
@@ -1189,7 +1191,7 @@ def get_local_time_str(utc_time: Time | None, timezone_str: str) -> tuple[str, s
         local_time_str = local_dt.strftime('%Y-%m-%d %H:%M:%S')
         tz_display_name = local_dt.tzname()
         if not tz_display_name:
-             tz_display_name = local_tz.zone
+            tz_display_name = local_tz.zone
         return local_time_str, tz_display_name
     except pytz.exceptions.UnknownTimeZoneError:
         print(f"Error: Unknown timezone '{timezone_str}'.")
@@ -1222,233 +1224,11 @@ def main():
 
     df_catalog_data = cached_load_ongc_data(CATALOG_FILEPATH, lang)
 
-    # --- Custom CSS Styling (Improved Selectors & Green Accent) ---
-    st.markdown("""
-    <style>
-        /* Base container styling */
-        .main .block-container {
-            background-color: #1a1a1a; /* Dark background */
-            color: #e0e0e0; /* Light text */
-            border-radius: 10px;
-            padding: 2rem;
-        }
-
-        /* --- Button Styling --- */
-        /* Primary Button Styling (Find Objects, Form Submit) */
-        /* Target button elements directly for more robustness */
-        button[data-testid="stButton"], button[data-testid="stFormSubmitButton"] {
-            background-image: linear-gradient(to right, #C1EDBE, #a8d7a4) !important; /* Green gradient */
-            color: #111111 !important; /* Dark text for contrast */
-            border: none !important;
-            padding: 10px 24px !important;
-            text-align: center !important;
-            font-size: 16px !important;
-            margin: 4px 2px !important;
-            cursor: pointer !important;
-            border-radius: 8px !important;
-            transition: background-image 0.4s ease, box-shadow 0.4s ease !important;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
-        }
-        /* Primary Button Hover */
-        button[data-testid="stButton"]:hover, button[data-testid="stFormSubmitButton"]:hover {
-            background-image: linear-gradient(to right, #a8d7a4, #8fcb8a) !important; /* Darker green on hover */
-            color: #000000 !important;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
-        }
-        /* Specific style for Form Submit button if needed */
-        div[data-testid="stFormSubmitButton"] > button {
-             margin-top: 28px !important; /* Add space above the button inside a form */
-        }
-        /* Secondary Button Styling (Close Graph) */
-        /* Use a class or more specific selector if possible, otherwise rely on kind="secondary" */
-        button[kind="secondary"] { /* This might be less reliable */
-            background-color: #4a4a4a !important; /* Dark gray */
-            color: #e0e0e0 !important; /* Light text */
-            border: 1px solid #666 !important; /* Slightly lighter border */
-            border-radius: 8px !important;
-            padding: 8px 18px !important; /* Slightly smaller padding */
-            background-image: none !important; /* Override gradient */
-        }
-        button[kind="secondary"]:hover {
-            background-color: #5a5a5a !important; /* Lighter gray on hover */
-            color: white !important;
-            border: 1px solid #888 !important;
-        }
-
-        /* --- Expander Styling --- */
-        .st-emotion-cache- Pptams details summary { /* More specific selector for expander header */
-             background-color: #282828; /* Slightly lighter dark shade */
-             color: #e0e0e0;
-             border-radius: 5px;
-             border-bottom: 1px solid #444; /* Separator line */
-             padding: 0.5rem 1rem; /* Adjust padding */
-             transition: background-color 0.3s ease; /* Smooth transition */
-        }
-        .st-emotion-cache- Pptams details summary:hover {
-             background-color: #333333; /* Slightly lighter on hover */
-        }
-        .st-emotion-cache- Pptams details summary svg { /* Expander Icon Color */
-             fill: #e0e0e0;
-        }
-        .st-emotion-cache- Pptams details[open] summary { /* Style for open expander */
-             border-bottom: 1px solid #888; /* Highlight bottom border when open */
-             background-color: #303030; /* Slightly different background when open */
-        }
-        .streamlit-expanderContent { /* Content area of expander */
-             background-color: #222222; /* Slightly different background for content */
-             border-radius: 0 0 5px 5px; /* Round bottom corners */
-             padding: 1rem;
-             border: 1px solid #444; /* Add border matching header */
-             border-top: none; /* Remove top border as it's handled by header */
-        }
-
-
-        /* --- Metric Box Styling --- */
-        div[data-testid="stMetric"] {
-            background-color: #2c2c2c; /* Dark background for metric */
-            border-radius: 8px;
-            padding: 15px; /* Increased padding */
-            border: 1px solid #444;
-            text-align: center; /* Center align metric content */
-            transition: background-color 0.3s ease;
-        }
-         div[data-testid="stMetric"]:hover {
-             background-color: #353535; /* Slightly lighter on hover */
-         }
-        div[data-testid="stMetric"] > label[data-testid="stMetricLabel"] { /* Target label specifically */
-            color: #aaaaaa !important; /* Gray for label */
-            font-size: 0.9em !important; /* Slightly smaller label */
-            margin-bottom: 5px !important; /* Space between label and value */
-        }
-        div[data-testid="stMetric"] > div[data-testid="stMetricValue"] {
-             color: #ffffff !important; /* White for value */
-             font-size: 1.7em !important; /* Larger value */
-             font-weight: bold !important;
-         }
-
-
-        /* --- Input Widgets Styling --- */
-        div[data-testid="stTextInput"] input,
-        div[data-testid="stNumberInput"] input,
-        div[data-testid="stDateInput"] input,
-        div[data-testid="stSelectbox"] div[role="button"],
-        div[data-testid="stMultiSelect"] div[data-baseweb="select"] > div {
-            background-color: #2c2c2c !important; /* Dark background */
-            color: #e0e0e0 !important; /* Light text */
-            border: 1px solid #666 !important; /* Slightly lighter border */
-            border-radius: 5px !important;
-            padding-top: 0.5rem !important; /* Adjust vertical padding */
-            padding-bottom: 0.5rem !important;
-        }
-        /* Focus style for inputs */
-        div[data-testid="stTextInput"] input:focus,
-        div[data-testid="stNumberInput"] input:focus,
-        div[data-testid="stDateInput"] input:focus,
-        div[data-testid="stSelectbox"] div[role="button"]:focus,
-        div[data-testid="stMultiSelect"] div[data-baseweb="select"] > div:focus {
-            border-color: #C1EDBE !important; /* Green border on focus */
-            box-shadow: 0 0 0 2px rgba(193, 237, 190, 0.3) !important; /* Subtle glow */
-        }
-
-        /* Radio Button Styling - Chip-like */
-        div[data-testid="stRadio"] label {
-            background-color: #3a3a3a !important; /* Slightly lighter gray */
-            color: #e0e0e0 !important;
-            border: 1px solid #555 !important;
-            border-radius: 15px !important; /* Rounded corners */
-            padding: 6px 12px !important; /* Adjust padding */
-            margin: 3px !important; /* Spacing */
-            display: inline-block !important;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
-         div[data-testid="stRadio"] input:checked + div label{ /* Style for selected radio button */
-             background-color: #a8d7a4 !important; /* Green background when checked */
-             color: #111111 !important; /* Dark text when checked */
-             border-color: #8fcb8a !important;
-         }
-        div[data-testid="stRadio"] label span{ /* Text inside radio */
-              /* color: #e0e0e0 !important; */ /* Inherits from label */
-              margin-left: 0px !important; /* Remove default margin */
-         }
-         /* Hide default radio circle */
-         div[data-testid="stRadio"] input {
-             display: none;
-         }
-
-
-         /* Input label styling */
-         label.st-emotion-cache-ue6h4q, .st-emotion-cache- Pptams label {
-             color: #c0c0c0 !important; /* Lighter gray for labels */
-             font-size: 0.95em;
-             margin-bottom: 4px; /* Add space below label */
-         }
-
-
-        /* --- Slider Styling --- */
-        div[data-testid="stSlider"] div[role="slider"] { /* Track */
-            background-color: #555; /* Gray track */
-        }
-        div[data-testid="stSlider"] div[data-baseweb="slider"] > div:nth-child(3) { /* Thumb */
-            background-color: #C1EDBE !important; /* Green thumb */
-            border: 2px solid #1a1a1a !important; /* Add border to thumb */
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3) !important; /* Add shadow to thumb */
-            height: 20px !important; /* Make thumb slightly larger */
-            width: 20px !important;
-        }
-        div[data-testid="stSlider"] div[data-baseweb="slider"] > div:nth-child(2) { /* Range track */
-            background-color: #a8d7a4 !important; /* Slightly darker green for range */
-        }
-        /* Slider Value Text Color (Tooltip) */
-        div[data-baseweb="tooltip"] { /* Target the tooltip directly */
-             color: #111111 !important; /* Dark text on tooltip */
-             background-color: #C1EDBE !important; /* Green background for tooltip */
-             border-radius: 3px !important;
-             padding: 2px 5px !important;
-             font-size: 0.9em !important;
-        }
-        /* Slider Min/Max Labels Color */
-        div[data-testid="stSlider"] div[data-baseweb="slider"] > div:first-child, /* Min label */
-        div[data-testid="stSlider"] div[data-baseweb="slider"] > div:last-child { /* Max label */
-            color: #e0e0e0 !important; /* Light text for min/max */
-            background-color: transparent !important;
-        }
-
-         /* --- Link Styling --- */
-         a {
-             color: #87CEEB; /* Sky blue links */
-             text-decoration: none; /* No underline */
-             transition: color 0.3s ease;
-         }
-         a:hover {
-             color: #add8e6; /* Lighter blue on hover */
-             text-decoration: underline;
-         }
-
-         /* --- Footer --- */
-         footer { visibility: hidden; }
-         /* Or to customize: */
-         /* footer::after {
-             content: " | Custom Footer Text";
-             visibility: visible;
-             display: block;
-             color: #555;
-         } */
-
-         /* --- General Spacing --- */
-         .stApp > header { /* Reduce header height */
-             height: 3rem;
-         }
-         .stButton, .stDownloadButton, .stTextInput, .stNumberInput, .stSelectbox, .stMultiselect, .stDateInput, .stSlider, .stRadio {
-             margin-bottom: 0.75rem !important; /* Consistent bottom margin for widgets */
-         }
-         hr { /* Style horizontal rules */
-             border-top: 1px solid #444;
-             margin-top: 1.5rem;
-             margin-bottom: 1.5rem;
-         }
-
-    </style>
-    """, unsafe_allow_html=True)
+    # --- Custom CSS Styling (Removed hardcoded dark theme) ---
+    # Removed the st.markdown(<style>...) block that hardcoded dark theme colors.
+    # Streamlit's default theme handling will now apply.
+    # Some minor styling might be added back later if needed,
+    # ensuring compatibility with both light and dark modes.
 
     # --- Title (Fixed) ---
     st.title("Advanced DSO Finder")
@@ -1478,18 +1258,18 @@ def main():
 
         # Show catalog loaded message or error
         if 'catalog_status_msg' not in st.session_state:
-             st.session_state.catalog_status_msg = "" # Initialize
+            st.session_state.catalog_status_msg = "" # Initialize
 
         if df_catalog_data is not None:
             new_msg = t['info_catalog_loaded'].format(len(df_catalog_data))
             if st.session_state.catalog_status_msg != new_msg:
-                 st.success(new_msg)
-                 st.session_state.catalog_status_msg = new_msg
+                st.success(new_msg)
+                st.session_state.catalog_status_msg = new_msg
         else:
-             new_msg = "Catalog loading failed. Check file or logs."
-             if st.session_state.catalog_status_msg != new_msg:
-                 st.error(new_msg)
-                 st.session_state.catalog_status_msg = new_msg
+            new_msg = "Catalog loading failed. Check file or logs."
+            if st.session_state.catalog_status_msg != new_msg:
+                st.error(new_msg)
+                st.session_state.catalog_status_msg = new_msg
 
 
         # --- Language Selector ---
@@ -1566,10 +1346,10 @@ def main():
 
                 status_placeholder = st.empty()
                 if st.session_state.location_search_status_msg:
-                     if st.session_state.location_search_success:
-                         status_placeholder.success(st.session_state.location_search_status_msg)
-                     else:
-                         status_placeholder.error(st.session_state.location_search_status_msg)
+                    if st.session_state.location_search_success:
+                        status_placeholder.success(st.session_state.location_search_status_msg)
+                    else:
+                        status_placeholder.error(st.session_state.location_search_status_msg)
 
                 if location_search_form_submitted and st.session_state.location_search_query:
                     location = None
@@ -1607,9 +1387,9 @@ def main():
                                 status_placeholder.info(t['location_search_info_fallback2'])
                                 if not final_error: final_error = e2
                             except Exception as e2:
-                                 print(f"ArcGIS failed unexpectedly: {e2}. Trying fallback 2 (Photon).")
-                                 status_placeholder.info(t['location_search_info_fallback2'])
-                                 if not final_error: final_error = e2
+                                print(f"ArcGIS failed unexpectedly: {e2}. Trying fallback 2 (Photon).")
+                                status_placeholder.info(t['location_search_info_fallback2'])
+                                if not final_error: final_error = e2
 
                         # Try Photon (Fallback 2)
                         if not location:
@@ -1628,54 +1408,55 @@ def main():
                                 print(f"Photon failed unexpectedly: {e3}. All fallbacks exhausted.")
                                 if not final_error: final_error = e3
 
-                    # Process Geocoding Result
-                    if location and service_used:
-                        found_lat = location.latitude
-                        found_lon = location.longitude
-                        found_name = location.address
-                        st.session_state.searched_location_name = found_name
-                        st.session_state.location_search_success = True
-                        st.session_state.manual_lat_val = found_lat
-                        st.session_state.manual_lon_val = found_lon
+                        # Process Geocoding Result
+                        if location and service_used:
+                            found_lat = location.latitude
+                            found_lon = location.longitude
+                            found_name = location.address
+                            st.session_state.searched_location_name = found_name
+                            st.session_state.location_search_success = True
+                            st.session_state.manual_lat_val = found_lat
+                            st.session_state.manual_lon_val = found_lon
 
-                        coord_str = t['location_search_coords'].format(found_lat, found_lon)
-                        if service_used == "Nominatim":
-                            st.session_state.location_search_status_msg = f"{t['location_search_found'].format(found_name)}\n({coord_str})"
-                            status_placeholder.success(st.session_state.location_search_status_msg)
-                        elif service_used == "ArcGIS":
-                            st.session_state.location_search_status_msg = f"{t['location_search_found_fallback'].format(found_name)}\n({coord_str})"
-                            status_placeholder.info(st.session_state.location_search_status_msg)
-                        elif service_used == "Photon":
-                            st.session_state.location_search_status_msg = f"{t['location_search_found_fallback2'].format(found_name)}\n({coord_str})"
-                            status_placeholder.info(st.session_state.location_search_status_msg)
+                            coord_str = t['location_search_coords'].format(found_lat, found_lon)
+                            if service_used == "Nominatim":
+                                st.session_state.location_search_status_msg = f"{t['location_search_found'].format(found_name)}\n({coord_str})"
+                                status_placeholder.success(st.session_state.location_search_status_msg)
+                            elif service_used == "ArcGIS":
+                                st.session_state.location_search_status_msg = f"{t['location_search_found_fallback'].format(found_name)}\n({coord_str})"
+                                status_placeholder.info(st.session_state.location_search_status_msg) # Use info for fallback
+                            elif service_used == "Photon":
+                                st.session_state.location_search_status_msg = f"{t['location_search_found_fallback2'].format(found_name)}\n({coord_str})"
+                                status_placeholder.info(st.session_state.location_search_status_msg) # Use info for fallback
 
-                        lat_val = found_lat
-                        lon_val = found_lon
-                        height_val = st.session_state.manual_height_val
-                        location_valid_for_tz = True
-                        current_location_valid = True
-                        st.session_state.location_is_valid_for_run = True
+                            lat_val = found_lat
+                            lon_val = found_lon
+                            height_val = st.session_state.manual_height_val
+                            location_valid_for_tz = True
+                            current_location_valid = True
+                            st.session_state.location_is_valid_for_run = True
 
-                    else: # Geocoding failed
-                        st.session_state.location_search_success = False
-                        st.session_state.searched_location_name = None
-                        if final_error:
-                             if isinstance(final_error, GeocoderTimedOut): st.session_state.location_search_status_msg = t['location_search_error_timeout']
-                             elif isinstance(final_error, GeocoderServiceError): st.session_state.location_search_status_msg = t['location_search_error_service'].format(final_error)
-                             else: st.session_state.location_search_status_msg = t['location_search_error_fallback2_failed'].format(final_error)
-                        else: st.session_state.location_search_status_msg = t['location_search_error_not_found']
+                        else: # Geocoding failed
+                            st.session_state.location_search_success = False
+                            st.session_state.searched_location_name = None
+                            if final_error:
+                                if isinstance(final_error, GeocoderTimedOut): st.session_state.location_search_status_msg = t['location_search_error_timeout']
+                                elif isinstance(final_error, GeocoderServiceError): st.session_state.location_search_status_msg = t['location_search_error_service'].format(final_error)
+                                else: st.session_state.location_search_status_msg = t['location_search_error_fallback2_failed'].format(final_error)
+                            else: st.session_state.location_search_status_msg = t['location_search_error_not_found']
 
-                        status_placeholder.error(st.session_state.location_search_status_msg)
-                        current_location_valid = False
-                        st.session_state.location_is_valid_for_run = False
+                            status_placeholder.error(st.session_state.location_search_status_msg)
+                            current_location_valid = False
+                            st.session_state.location_is_valid_for_run = False
 
                 elif st.session_state.location_search_success:
-                     lat_val = st.session_state.manual_lat_val
-                     lon_val = st.session_state.manual_lon_val
-                     height_val = st.session_state.manual_height_val
-                     location_valid_for_tz = True
-                     current_location_valid = True
-                     status_placeholder.success(st.session_state.location_search_status_msg)
+                    lat_val = st.session_state.manual_lat_val
+                    lon_val = st.session_state.manual_lon_val
+                    height_val = st.session_state.manual_height_val
+                    location_valid_for_tz = True
+                    current_location_valid = True
+                    # Display existing success message
+                    status_placeholder.success(st.session_state.location_search_status_msg)
 
 
             # --- Automatic Timezone Detection ---
@@ -1686,7 +1467,7 @@ def main():
                     try:
                         found_tz = tf.timezone_at(lng=lon_val, lat=lat_val)
                         if found_tz:
-                            pytz.timezone(found_tz)
+                            pytz.timezone(found_tz) # Validate timezone
                             st.session_state.selected_timezone = found_tz
                             auto_timezone_msg = f"{t['timezone_auto_set_label']} **{found_tz}**"
                         else:
@@ -1713,7 +1494,7 @@ def main():
         with st.expander(t['time_expander'], expanded=False):
             time_options_map = {'Now': t['time_option_now'], 'Specific': t['time_option_specific']}
             # if st.session_state.get("time_choice_exp", "Now") not in time_options_map:
-            #      st.session_state.time_choice_exp = "Now" # Default already set in initialize
+            #     st.session_state.time_choice_exp = "Now" # Default already set in initialize
 
             time_choice_key = st.radio(
                 t['time_select_label'], options=list(time_options_map.keys()),
@@ -1804,6 +1585,7 @@ def main():
                 if current_selection_in_state != st.session_state.object_type_filter_exp:
                     st.session_state.object_type_filter_exp = current_selection_in_state
 
+                # Set default to current selection if it exists, otherwise select all
                 default_for_widget = current_selection_in_state if current_selection_in_state else all_types
                 st.multiselect(
                     t['object_types_label'], options=all_types,
@@ -1885,10 +1667,10 @@ def main():
                 st.session_state.selected_peak_direction = ALL_DIRECTIONS_KEY
             else:
                 try:
-                     selected_internal_index = direction_options_display.index(selected_direction_display)
-                     st.session_state.selected_peak_direction = direction_options_internal[selected_internal_index]
+                    selected_internal_index = direction_options_display.index(selected_direction_display)
+                    st.session_state.selected_peak_direction = direction_options_internal[selected_internal_index]
                 except ValueError:
-                     st.session_state.selected_peak_direction = ALL_DIRECTIONS_KEY
+                    st.session_state.selected_peak_direction = ALL_DIRECTIONS_KEY
 
 
         # --- Result Options ---
@@ -1961,11 +1743,18 @@ def main():
     # Re-calculate ref_time_main based on current state
     if is_time_now_main:
         ref_time_main = Time.now()
-        time_display = t['search_params_time_now'].format(ref_time_main.iso)
+        # Format time display for 'Now' case
+        try:
+            # Attempt to get local time for display, fallback to UTC
+            local_now_str, local_tz_now = get_local_time_str(ref_time_main, st.session_state.selected_timezone)
+            time_display = t['search_params_time_now'].format(f"{local_now_str} {local_tz_now}")
+        except Exception:
+            time_display = t['search_params_time_now'].format(f"{ref_time_main.to_datetime(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC")
+
     else:
         selected_date_main = st.session_state.get('selected_date_widget', date.today())
         ref_time_main = Time(datetime.combine(selected_date_main, time(12, 0)), scale='utc')
-        time_display = t['search_params_time_specific'].format(ref_time_main.datetime.strftime('%Y-%m-%d'))
+        time_display = t['search_params_time_specific'].format(selected_date_main.strftime('%Y-%m-%d'))
 
     param_col1.markdown(t['search_params_time'].format(time_display))
     # FIX: Removed timezone display from here
@@ -2050,8 +1839,8 @@ def main():
                         time_resolution = 5 * u.minute
                         observing_times = Time(np.arange(start_time_calc.jd, end_time_calc.jd, time_resolution.to(u.day).value), format='jd', scale='utc')
                         if len(observing_times) < 2:
-                             results_placeholder.warning("Warning: Observation window is too short for detailed calculation.")
-                             # Continue anyway, duration might be 0
+                            results_placeholder.warning("Warning: Observation window is too short for detailed calculation.")
+                            # Continue anyway, duration might be 0
 
                         # 2. Filter Catalog based on Sidebar Settings
                         filtered_df = df_catalog_data.copy()
@@ -2066,64 +1855,64 @@ def main():
                         size_col_exists_main = df_catalog_data is not None and 'MajAx' in df_catalog_data.columns and df_catalog_data['MajAx'].notna().any()
                         size_slider_disabled_main = not size_col_exists_main # Recalculate based on loaded data
                         if size_col_exists_main and not size_slider_disabled_main:
-                             filtered_df = filtered_df.dropna(subset=['MajAx'])
-                             filtered_df = filtered_df[
-                                 (filtered_df['MajAx'] >= size_min_disp) &
-                                 (filtered_df['MajAx'] <= size_max_disp)
-                             ]
+                            filtered_df = filtered_df.dropna(subset=['MajAx'])
+                            filtered_df = filtered_df[
+                                (filtered_df['MajAx'] >= size_min_disp) &
+                                (filtered_df['MajAx'] <= size_max_disp)
+                            ]
 
                         if filtered_df.empty:
-                             results_placeholder.warning(t['warning_no_objects_found'] + " (after initial filtering)")
-                             st.session_state.last_results = []
+                            results_placeholder.warning(t['warning_no_objects_found'] + " (after initial filtering)")
+                            st.session_state.last_results = []
                         else:
-                             # 3. Find Observable Objects (reaching min alt)
-                             min_altitude_for_search = st.session_state.min_alt_slider * u.deg
-                             found_objects = find_observable_objects(
-                                 observer_for_run.location,
-                                 observing_times,
-                                 min_altitude_for_search,
-                                 filtered_df,
-                                 lang
-                             )
+                            # 3. Find Observable Objects (reaching min alt)
+                            min_altitude_for_search = st.session_state.min_alt_slider * u.deg
+                            found_objects = find_observable_objects(
+                                observer_for_run.location,
+                                observing_times,
+                                min_altitude_for_search,
+                                filtered_df,
+                                lang
+                            )
 
-                             # 4. Apply Max Altitude and Direction Filters (post-calculation)
-                             final_objects = []
-                             selected_direction = st.session_state.selected_peak_direction
-                             max_alt_filter = st.session_state.max_alt_slider # Get max alt from slider
+                            # 4. Apply Max Altitude and Direction Filters (post-calculation)
+                            final_objects = []
+                            selected_direction = st.session_state.selected_peak_direction
+                            max_alt_filter = st.session_state.max_alt_slider # Get max alt from slider
 
-                             for obj in found_objects:
-                                 # Apply Max Altitude Filter (based on peak altitude)
-                                 peak_alt = obj.get('Max Altitude (°)', -999) # Default to -999 if missing
-                                 if peak_alt > max_alt_filter:
-                                     continue # Skip if peak altitude is above max limit
+                            for obj in found_objects:
+                                # Apply Max Altitude Filter (based on peak altitude)
+                                peak_alt = obj.get('Max Altitude (°)', -999) # Default to -999 if missing
+                                if peak_alt > max_alt_filter:
+                                    continue # Skip if peak altitude is above max limit
 
-                                 # Apply Direction Filter
-                                 if selected_direction != ALL_DIRECTIONS_KEY:
-                                     if obj.get('Direction at Max') != selected_direction:
-                                         continue # Skip if direction doesn't match
+                                # Apply Direction Filter
+                                if selected_direction != ALL_DIRECTIONS_KEY:
+                                    if obj.get('Direction at Max') != selected_direction:
+                                        continue # Skip if direction doesn't match
 
-                                 final_objects.append(obj) # Add object if it passes all filters
-
-
-                             # 5. Sort Results
-                             sort_key = st.session_state.sort_method
-                             if sort_key == 'Brightness':
-                                 final_objects.sort(key=lambda x: x.get('Magnitude', float('inf')) if x.get('Magnitude') is not None else float('inf'))
-                             else: # Default: Duration & Altitude
-                                 final_objects.sort(key=lambda x: (x.get('Max Cont. Duration (h)', 0), x.get('Max Altitude (°)', 0)), reverse=True)
+                                final_objects.append(obj) # Add object if it passes all filters
 
 
-                             # 6. Limit Number of Results
-                             num_to_show = st.session_state.num_objects_slider
-                             st.session_state.last_results = final_objects[:num_to_show]
+                            # 5. Sort Results
+                            sort_key = st.session_state.sort_method
+                            if sort_key == 'Brightness':
+                                final_objects.sort(key=lambda x: x.get('Magnitude', float('inf')) if x.get('Magnitude') is not None else float('inf'))
+                            else: # Default: Duration & Altitude
+                                final_objects.sort(key=lambda x: (x.get('Max Cont. Duration (h)', 0), x.get('Max Altitude (°)', 0)), reverse=True)
 
-                             # Display summary message (inside the 'if filtered_df not empty' block)
-                             if not final_objects:
-                                 results_placeholder.warning(t['warning_no_objects_found'])
-                             else:
-                                 results_placeholder.success(t['success_objects_found'].format(len(final_objects)))
-                                 sort_msg_key = 'info_showing_list_duration' if sort_key != 'Brightness' else 'info_showing_list_magnitude'
-                                 results_placeholder.info(t[sort_msg_key].format(len(st.session_state.last_results)))
+
+                            # 6. Limit Number of Results
+                            num_to_show = st.session_state.num_objects_slider
+                            st.session_state.last_results = final_objects[:num_to_show]
+
+                            # Display summary message (inside the 'if filtered_df not empty' block)
+                            if not final_objects:
+                                results_placeholder.warning(t['warning_no_objects_found'])
+                            else:
+                                results_placeholder.success(t['success_objects_found'].format(len(final_objects)))
+                                sort_msg_key = 'info_showing_list_duration' if sort_key != 'Brightness' else 'info_showing_list_magnitude'
+                                results_placeholder.info(t[sort_msg_key].format(len(st.session_state.last_results)))
 
                     else: # Window calculation failed
                         results_placeholder.error(t['error_no_window'] + " Cannot proceed with search.")
@@ -2161,22 +1950,22 @@ def main():
 
         # Check if window times are valid Time objects before calculating moon phase
         if observer_for_run and isinstance(window_start, Time) and isinstance(window_end, Time):
-             mid_time = window_start + (window_end - window_start) / 2
-             try:
-                 illum = moon_illumination(mid_time)
-                 moon_phase_percent = illum * 100
-                 moon_svg = create_moon_phase_svg(illum, size=50) # Use corrected SVG function
+            mid_time = window_start + (window_end - window_start) / 2
+            try:
+                illum = moon_illumination(mid_time)
+                moon_phase_percent = illum * 100
+                moon_svg = create_moon_phase_svg(illum, size=50) # Use corrected SVG function
 
-                 moon_col1, moon_col2 = results_placeholder.columns([1, 3])
-                 with moon_col1: st.markdown(moon_svg, unsafe_allow_html=True)
-                 with moon_col2:
-                      st.metric(label=t['moon_metric_label'], value=f"{moon_phase_percent:.0f}%")
-                      moon_warn_threshold = st.session_state.moon_phase_slider
-                      if moon_phase_percent > moon_warn_threshold:
-                           st.warning(t['moon_warning_message'].format(moon_phase_percent, moon_warn_threshold))
+                moon_col1, moon_col2 = results_placeholder.columns([1, 3])
+                with moon_col1: st.markdown(moon_svg, unsafe_allow_html=True)
+                with moon_col2:
+                    st.metric(label=t['moon_metric_label'], value=f"{moon_phase_percent:.0f}%")
+                    moon_warn_threshold = st.session_state.moon_phase_slider
+                    if moon_phase_percent > moon_warn_threshold:
+                        st.warning(t['moon_warning_message'].format(moon_phase_percent, moon_warn_threshold))
 
-             except Exception as moon_e:
-                 results_placeholder.warning(t['moon_phase_error'].format(moon_e))
+            except Exception as moon_e:
+                results_placeholder.warning(t['moon_phase_error'].format(moon_e))
         elif st.session_state.find_button_pressed: # Only show info if search was attempted but window failed
              results_placeholder.info("Moon phase cannot be calculated (invalid observation window).")
 
@@ -2212,120 +2001,120 @@ def main():
             object_container = results_placeholder.container()
 
             with object_container.expander(expander_title, expanded=is_expanded):
-                 col1, col2, col3 = st.columns([2,2,1])
+                col1, col2, col3 = st.columns([2,2,1])
 
-                 # Col 1: Details
-                 col1.markdown(t['results_coords_header'])
-                 col1.markdown(f"**{t['results_export_constellation']}:** {obj_data.get('Constellation', 'N/A')}")
-                 size_arcmin = obj_data.get('Size (arcmin)')
-                 col1.markdown(f"**{t['results_size_label']}** {t['results_size_value'].format(size_arcmin) if size_arcmin is not None else 'N/A'}")
-                 col1.markdown(f"**RA:** {obj_data.get('RA', 'N/A')}")
-                 col1.markdown(f"**Dec:** {obj_data.get('Dec', 'N/A')}")
+                # Col 1: Details
+                col1.markdown(t['results_coords_header'])
+                col1.markdown(f"**{t['results_export_constellation']}:** {obj_data.get('Constellation', 'N/A')}")
+                size_arcmin = obj_data.get('Size (arcmin)')
+                col1.markdown(f"**{t['results_size_label']}** {t['results_size_value'].format(size_arcmin) if size_arcmin is not None else 'N/A'}")
+                col1.markdown(f"**RA:** {obj_data.get('RA', 'N/A')}")
+                col1.markdown(f"**Dec:** {obj_data.get('Dec', 'N/A')}")
 
-                 # Col 2: Visibility
-                 col2.markdown(t['results_max_alt_header'])
-                 max_alt = obj_data.get('Max Altitude (°)', 0)
-                 az_at_max = obj_data.get('Azimuth at Max (°)', 0)
-                 dir_at_max = obj_data.get('Direction at Max', 'N/A')
-                 azimuth_formatted = t['results_azimuth_label'].format(az_at_max, "")
-                 direction_formatted = t['results_direction_label'].format(dir_at_max)
-                 col2.markdown(f"**{max_alt:.1f}°** {azimuth_formatted}{direction_formatted}")
+                # Col 2: Visibility
+                col2.markdown(t['results_max_alt_header'])
+                max_alt = obj_data.get('Max Altitude (°)', 0)
+                az_at_max = obj_data.get('Azimuth at Max (°)', 0)
+                dir_at_max = obj_data.get('Direction at Max', 'N/A')
+                azimuth_formatted = t['results_azimuth_label'].format(az_at_max, "")
+                direction_formatted = t['results_direction_label'].format(dir_at_max)
+                col2.markdown(f"**{max_alt:.1f}°** {azimuth_formatted}{direction_formatted}")
 
-                 col2.markdown(t['results_best_time_header'])
-                 peak_time_utc = obj_data.get('Time at Max (UTC)')
-                 local_time_str, local_tz_name = get_local_time_str(peak_time_utc, st.session_state.selected_timezone)
-                 col2.markdown(f"{local_time_str} ({local_tz_name})")
+                col2.markdown(t['results_best_time_header'])
+                peak_time_utc = obj_data.get('Time at Max (UTC)')
+                local_time_str, local_tz_name = get_local_time_str(peak_time_utc, st.session_state.selected_timezone)
+                col2.markdown(f"{local_time_str} ({local_tz_name})")
 
-                 col2.markdown(t['results_cont_duration_header'])
-                 duration_h = obj_data.get('Max Cont. Duration (h)', 0)
-                 col2.markdown(t['results_duration_value'].format(duration_h))
+                col2.markdown(t['results_cont_duration_header'])
+                duration_h = obj_data.get('Max Cont. Duration (h)', 0)
+                col2.markdown(t['results_duration_value'].format(duration_h))
 
-                 # Col 3: Links & Actions
-                 google_query = urllib.parse.quote_plus(f"{obj_name} astronomy")
-                 google_url = f"https://www.google.com/search?q={google_query}"
-                 col3.markdown(f"[{t['google_link_text']}]({google_url})", unsafe_allow_html=True)
+                # Col 3: Links & Actions
+                google_query = urllib.parse.quote_plus(f"{obj_name} astronomy")
+                google_url = f"https://www.google.com/search?q={google_query}"
+                col3.markdown(f"[{t['google_link_text']}]({google_url})", unsafe_allow_html=True)
 
-                 simbad_query = urllib.parse.quote_plus(obj_name)
-                 simbad_url = f"http://simbad.u-strasbg.fr/simbad/sim-basic?Ident={simbad_query}"
-                 col3.markdown(f"[{t['simbad_link_text']}]({simbad_url})", unsafe_allow_html=True)
+                simbad_query = urllib.parse.quote_plus(obj_name)
+                simbad_url = f"http://simbad.u-strasbg.fr/simbad/sim-basic?Ident={simbad_query}"
+                col3.markdown(f"[{t['simbad_link_text']}]({simbad_url})", unsafe_allow_html=True)
 
-                 plot_button_key = f"plot_{obj_name}_{i}"
-                 if st.button(t['results_graph_button'], key=plot_button_key):
-                      st.session_state.plot_object_name = obj_name
-                      st.session_state.active_result_plot_data = obj_data
-                      st.session_state.show_plot = True
-                      st.session_state.show_custom_plot = False
-                      st.session_state.expanded_object_name = obj_name
-                      st.rerun()
+                plot_button_key = f"plot_{obj_name}_{i}"
+                if st.button(t['results_graph_button'], key=plot_button_key):
+                    st.session_state.plot_object_name = obj_name
+                    st.session_state.active_result_plot_data = obj_data
+                    st.session_state.show_plot = True
+                    st.session_state.show_custom_plot = False
+                    st.session_state.expanded_object_name = obj_name
+                    st.rerun()
 
-                 # --- Plot Display Area (Inside Expander) ---
-                 # FIX: Moved plot display logic inside the expander
-                 if st.session_state.show_plot and st.session_state.plot_object_name == obj_name:
-                     plot_data = st.session_state.active_result_plot_data
-                     min_alt_line = st.session_state.min_alt_slider
-                     max_alt_line = st.session_state.max_alt_slider # Get max alt for plot
+                # --- Plot Display Area (Inside Expander) ---
+                # FIX: Moved plot display logic inside the expander
+                if st.session_state.show_plot and st.session_state.plot_object_name == obj_name:
+                    plot_data = st.session_state.active_result_plot_data
+                    min_alt_line = st.session_state.min_alt_slider
+                    max_alt_line = st.session_state.max_alt_slider # Get max alt for plot
 
-                     st.markdown("---") # Separator before plot inside expander
-                     with st.spinner(t['results_spinner_plotting']):
-                          try:
-                              # Pass max altitude to plotting function
-                              fig = create_plot(plot_data, min_alt_line, max_alt_line, st.session_state.plot_type_selection, lang)
-                              if fig:
-                                   st.pyplot(fig)
-                                   if st.button(t['results_close_graph_button'], key=f"close_plot_{obj_name}_{i}"): # Unique key for close button
-                                        st.session_state.show_plot = False
-                                        st.session_state.active_result_plot_data = None
-                                        st.session_state.expanded_object_name = None # Close this expander
-                                        st.rerun()
-                              else: st.error(t['results_graph_not_created'])
-                          except Exception as plot_err:
-                              st.error(t['results_graph_error'].format(plot_err))
-                              traceback.print_exc()
+                    st.markdown("---") # Separator before plot inside expander
+                    with st.spinner(t['results_spinner_plotting']):
+                        try:
+                            # Pass max altitude to plotting function
+                            fig = create_plot(plot_data, min_alt_line, max_alt_line, st.session_state.plot_type_selection, lang)
+                            if fig:
+                                st.pyplot(fig)
+                                if st.button(t['results_close_graph_button'], key=f"close_plot_{obj_name}_{i}"): # Unique key for close button
+                                    st.session_state.show_plot = False
+                                    st.session_state.active_result_plot_data = None
+                                    st.session_state.expanded_object_name = None # Close this expander
+                                    st.rerun()
+                            else: st.error(t['results_graph_not_created'])
+                        except Exception as plot_err:
+                            st.error(t['results_graph_error'].format(plot_err))
+                            traceback.print_exc()
 
 
         # --- CSV Export Button ---
         if results_data:
-             # Place button below the list of expanders
-             csv_export_placeholder = results_placeholder.empty()
-             try:
-                  export_data = []
-                  for obj in results_data:
-                       peak_time_utc = obj.get('Time at Max (UTC)')
-                       local_time_str, _ = get_local_time_str(peak_time_utc, st.session_state.selected_timezone)
-                       export_data.append({
-                           t['results_export_name']: obj.get('Name', 'N/A'),
-                           t['results_export_type']: obj.get('Type', 'N/A'),
-                           t['results_export_constellation']: obj.get('Constellation', 'N/A'),
-                           t['results_export_mag']: obj.get('Magnitude'),
-                           t['results_export_size']: obj.get('Size (arcmin)'),
-                           t['results_export_ra']: obj.get('RA', 'N/A'),
-                           t['results_export_dec']: obj.get('Dec', 'N/A'),
-                           t['results_export_max_alt']: obj.get('Max Altitude (°)', 0),
-                           t['results_export_az_at_max']: obj.get('Azimuth at Max (°)', 0),
-                           t['results_export_direction_at_max']: obj.get('Direction at Max', 'N/A'),
-                           t['results_export_time_max_utc']: peak_time_utc.iso if peak_time_utc else "N/A",
-                           t['results_export_time_max_local']: local_time_str,
-                           t['results_export_cont_duration']: obj.get('Max Cont. Duration (h)', 0)
-                       })
+            # Place button below the list of expanders
+            csv_export_placeholder = results_placeholder.empty()
+            try:
+                export_data = []
+                for obj in results_data:
+                    peak_time_utc = obj.get('Time at Max (UTC)')
+                    local_time_str, _ = get_local_time_str(peak_time_utc, st.session_state.selected_timezone)
+                    export_data.append({
+                        t['results_export_name']: obj.get('Name', 'N/A'),
+                        t['results_export_type']: obj.get('Type', 'N/A'),
+                        t['results_export_constellation']: obj.get('Constellation', 'N/A'),
+                        t['results_export_mag']: obj.get('Magnitude'),
+                        t['results_export_size']: obj.get('Size (arcmin)'),
+                        t['results_export_ra']: obj.get('RA', 'N/A'),
+                        t['results_export_dec']: obj.get('Dec', 'N/A'),
+                        t['results_export_max_alt']: obj.get('Max Altitude (°)', 0),
+                        t['results_export_az_at_max']: obj.get('Azimuth at Max (°)', 0),
+                        t['results_export_direction_at_max']: obj.get('Direction at Max', 'N/A'),
+                        t['results_export_time_max_utc']: peak_time_utc.iso if peak_time_utc else "N/A",
+                        t['results_export_time_max_local']: local_time_str,
+                        t['results_export_cont_duration']: obj.get('Max Cont. Duration (h)', 0)
+                    })
 
-                  df_export = pd.DataFrame(export_data)
-                  # FIX: Conditional decimal separator based on language
-                  decimal_sep = ',' if lang == 'de' else '.'
-                  csv_string = df_export.to_csv(index=False, sep=';', encoding='utf-8-sig', decimal=decimal_sep)
+                df_export = pd.DataFrame(export_data)
+                # FIX: Conditional decimal separator based on language
+                decimal_sep = ',' if lang == 'de' else '.'
+                csv_string = df_export.to_csv(index=False, sep=';', encoding='utf-8-sig', decimal=decimal_sep)
 
-                  now_str = datetime.now().strftime("%Y%m%d_%H%M")
-                  csv_filename = t['results_csv_filename'].format(now_str)
+                now_str = datetime.now().strftime("%Y%m%d_%H%M")
+                csv_filename = t['results_csv_filename'].format(now_str)
 
-                  # Place button using the placeholder defined earlier
-                  csv_export_placeholder.download_button(
-                       label=t['results_save_csv_button'],
-                       data=csv_string,
-                       file_name=csv_filename,
-                       mime='text/csv',
-                       key='csv_download_button'
-                  )
-             except Exception as csv_e:
-                  csv_export_placeholder.error(t['results_csv_export_error'].format(csv_e))
+                # Place button using the placeholder defined earlier
+                csv_export_placeholder.download_button(
+                    label=t['results_save_csv_button'],
+                    data=csv_string,
+                    file_name=csv_filename,
+                    mime='text/csv',
+                    key='csv_download_button'
+                )
+            except Exception as csv_e:
+                 csv_export_placeholder.error(t['results_csv_export_error'].format(csv_e))
 
     elif st.session_state.find_button_pressed: # Show message if button was pressed but no results
         results_placeholder.info(t['warning_no_objects_found'])
@@ -2370,13 +2159,13 @@ def main():
 
                         # Use times from the main search window
                         if window_start_cust < window_end_cust:
-                             time_resolution_cust = 5 * u.minute
-                             observing_times_custom = Time(np.arange(window_start_cust.jd, window_end_cust.jd, time_resolution_cust.to(u.day).value), format='jd', scale='utc')
+                            time_resolution_cust = 5 * u.minute
+                            observing_times_custom = Time(np.arange(window_start_cust.jd, window_end_cust.jd, time_resolution_cust.to(u.day).value), format='jd', scale='utc')
                         else:
-                             raise ValueError("Valid time window from main search not available for custom plot.")
+                            raise ValueError("Valid time window from main search not available for custom plot.")
 
                         if len(observing_times_custom) < 2:
-                             raise ValueError("Calculated time window for custom plot is too short.")
+                            raise ValueError("Calculated time window for custom plot is too short.")
 
 
                         altaz_frame_custom = AltAz(obstime=observing_times_custom, location=observer_for_run.location)
@@ -2409,21 +2198,21 @@ def main():
                max_alt_line_cust = st.session_state.max_alt_slider # Get max alt
 
                with custom_plot_display_area.container():
-                    st.markdown("---")
-                    with st.spinner(t['results_spinner_plotting']):
-                         try:
-                              # Pass max altitude to plotting function
-                              fig_cust = create_plot(custom_plot_data, min_alt_line_cust, max_alt_line_cust, st.session_state.plot_type_selection, lang)
-                              if fig_cust:
-                                   st.pyplot(fig_cust)
-                                   if st.button(t['results_close_graph_button'], key="close_custom_plot"):
-                                        st.session_state.show_custom_plot = False
-                                        st.session_state.custom_target_plot_data = None
-                                        st.rerun()
-                              else: st.error(t['results_graph_not_created'])
-                         except Exception as plot_err_cust:
-                              st.error(t['results_graph_error'].format(plot_err_cust))
-                              traceback.print_exc()
+                   st.markdown("---")
+                   with st.spinner(t['results_spinner_plotting']):
+                       try:
+                           # Pass max altitude to plotting function
+                           fig_cust = create_plot(custom_plot_data, min_alt_line_cust, max_alt_line_cust, st.session_state.plot_type_selection, lang)
+                           if fig_cust:
+                               st.pyplot(fig_cust)
+                               if st.button(t['results_close_graph_button'], key="close_custom_plot"):
+                                   st.session_state.show_custom_plot = False
+                                   st.session_state.custom_target_plot_data = None
+                                   st.rerun()
+                           else: st.error(t['results_graph_not_created'])
+                       except Exception as plot_err_cust:
+                           st.error(t['results_graph_error'].format(plot_err_cust))
+                           traceback.print_exc()
 
 
 # --- Plotting Function ---
@@ -2431,7 +2220,43 @@ def main():
 def create_plot(plot_data: dict, min_altitude_deg: float, max_altitude_deg: float, plot_type: str, lang: str) -> plt.Figure | None:
     """Creates either an Altitude vs Time or Sky Path (Alt/Az) plot."""
     t = translations.get(lang, translations['en'])
-    plt.style.use('dark_background')
+
+    # Use Streamlit's theme detection for plot styling
+    # Note: This requires Streamlit >= 1.10
+    try:
+        # Check if Streamlit's theme information is available
+        from streamlit.config import get_option
+        theme = get_option("theme.base")
+        if theme == "dark":
+            plt.style.use('dark_background')
+            line_color = 'skyblue'
+            grid_color = 'gray'
+            label_color = '#e0e0e0'
+            title_color = '#ffffff'
+            legend_facecolor = '#333333'
+            min_alt_color = 'tomato' # Lighter red for dark bg
+            max_alt_color = 'orange'
+        else: # light theme or fallback
+            plt.style.use('default') # Use matplotlib default for light
+            line_color = 'dodgerblue'
+            grid_color = 'lightgray'
+            label_color = '#333333'
+            title_color = '#000000'
+            legend_facecolor = '#eeeeee'
+            min_alt_color = 'red'
+            max_alt_color = 'darkorange'
+    except (ImportError, AttributeError):
+        # Fallback for older Streamlit versions or if theme detection fails
+        print("Warning: Could not detect Streamlit theme. Using default plot style.")
+        plt.style.use('default')
+        line_color = 'dodgerblue'
+        grid_color = 'lightgray'
+        label_color = '#333333'
+        title_color = '#000000'
+        legend_facecolor = '#eeeeee'
+        min_alt_color = 'red'
+        max_alt_color = 'darkorange'
+
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
@@ -2442,30 +2267,40 @@ def create_plot(plot_data: dict, min_altitude_deg: float, max_altitude_deg: floa
 
     if times is None or altitudes is None or len(times) != len(altitudes):
          print("Error: Mismatched or missing times/altitudes for plotting.")
+         plt.close(fig) # Close the figure to avoid display issues
          return None
 
     plot_times = times.plot_date
 
     if plot_type == 'Altitude Plot':
         if azimuths is None: print("Warning: Azimuth data missing for Altitude Plot coloring.")
-        colors = plt.cm.viridis(azimuths / 360.0) if azimuths is not None else 'skyblue'
-        scatter = ax.scatter(plot_times, altitudes, c=colors, s=10, alpha=0.7, edgecolors='none')
+        # Use a single color for better theme compatibility unless color adds significant value
+        # colors = plt.cm.viridis(azimuths / 360.0) if azimuths is not None else line_color
+        scatter = ax.scatter(plot_times, altitudes, c=line_color, s=10, alpha=0.7, edgecolors='none')
 
         # Add Min/Max Altitude Lines
-        ax.axhline(min_altitude_deg, color='red', linestyle='--', linewidth=1, label=t['graph_min_altitude_label'].format(min_altitude_deg))
+        ax.axhline(min_altitude_deg, color=min_alt_color, linestyle='--', linewidth=1, label=t['graph_min_altitude_label'].format(min_altitude_deg))
         if max_altitude_deg < 90: # Only plot max line if it's not 90
-             ax.axhline(max_altitude_deg, color='orange', linestyle=':', linewidth=1, label=t['graph_max_altitude_label'].format(max_altitude_deg))
+             ax.axhline(max_altitude_deg, color=max_alt_color, linestyle=':', linewidth=1, label=t['graph_max_altitude_label'].format(max_altitude_deg))
 
-        ax.set_xlabel("Time (UTC)")
-        ax.set_ylabel(t['graph_ylabel'])
-        ax.set_title(t['graph_title_alt_time'].format(obj_name))
+        ax.set_xlabel("Time (UTC)", color=label_color)
+        ax.set_ylabel(t['graph_ylabel'], color=label_color)
+        ax.set_title(t['graph_title_alt_time'].format(obj_name), color=title_color)
         ax.set_ylim(0, 90)
         ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
         fig.autofmt_xdate()
 
-        if azimuths is not None:
-            cbar = fig.colorbar(scatter, ax=ax, label=t['graph_azimuth_label'], ticks=np.linspace(0, 360, 9))
-            cbar.ax.set_yticklabels(['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'N'])
+        # Set tick colors
+        ax.tick_params(axis='x', colors=label_color)
+        ax.tick_params(axis='y', colors=label_color)
+
+        # Colorbar might be less useful without azimuth coloring
+        # if azimuths is not None:
+        #     cbar = fig.colorbar(scatter, ax=ax, label=t['graph_azimuth_label'], ticks=np.linspace(0, 360, 9))
+        #     cbar.ax.set_yticklabels(['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'N'])
+        #     cbar.ax.yaxis.set_tick_params(color=label_color)
+        #     cbar.set_label(t['graph_azimuth_label'], color=label_color)
+        #     plt.setp(plt.getp(cbar.ax.axes, 'yticklabels'), color=label_color)
 
     elif plot_type == 'Sky Path':
         if azimuths is None:
@@ -2473,8 +2308,10 @@ def create_plot(plot_data: dict, min_altitude_deg: float, max_altitude_deg: floa
             plt.close(fig)
             return None
 
-        ax.remove()
+        ax.remove() # Remove the default axes
         ax = fig.add_subplot(111, projection='polar')
+        # Set background color based on theme
+        ax.set_facecolor(fig.get_facecolor()) # Match figure background
 
         az_rad = np.deg2rad(azimuths)
         radius = 90 - altitudes # Radius 0 is zenith (alt 90), radius 90 is horizon (alt 0)
@@ -2484,30 +2321,42 @@ def create_plot(plot_data: dict, min_altitude_deg: float, max_altitude_deg: floa
         # We actually want to plot the full path but indicate the limits
         # Keep all points for plotting the path, but add limit circles
 
-        time_norm = (times.jd - times.jd.min()) / (times.jd.max() - times.jd.min() + 1e-9)
+        time_norm = (times.jd - times.jd.min()) / (times.jd.max() - times.jd.min() + 1e-9) # Avoid division by zero if window is instant
         colors = plt.cm.plasma(time_norm)
 
         scatter = ax.scatter(az_rad, radius, c=colors, s=10, alpha=0.7, edgecolors='none')
 
         # Add Min/Max Altitude Circles
-        ax.plot(np.linspace(0, 2*np.pi, 100), np.full(100, 90 - min_altitude_deg), color='red', linestyle='--', linewidth=1, label=t['graph_min_altitude_label'].format(min_altitude_deg))
+        ax.plot(np.linspace(0, 2*np.pi, 100), np.full(100, 90 - min_altitude_deg), color=min_alt_color, linestyle='--', linewidth=1, label=t['graph_min_altitude_label'].format(min_altitude_deg))
         if max_altitude_deg < 90: # Only plot max circle if not 90
-             ax.plot(np.linspace(0, 2*np.pi, 100), np.full(100, 90 - max_altitude_deg), color='orange', linestyle=':', linewidth=1, label=t['graph_max_altitude_label'].format(max_altitude_deg))
+             ax.plot(np.linspace(0, 2*np.pi, 100), np.full(100, 90 - max_altitude_deg), color=max_alt_color, linestyle=':', linewidth=1, label=t['graph_max_altitude_label'].format(max_altitude_deg))
 
 
         ax.set_theta_zero_location('N')
         ax.set_theta_direction(-1)
         ax.set_yticks(np.arange(0, 91, 15))
-        ax.set_yticklabels([f"{90-alt}°" for alt in np.arange(0, 91, 15)])
+        ax.set_yticklabels([f"{90-alt}°" for alt in np.arange(0, 91, 15)], color=label_color)
         ax.set_ylim(0, 90) # Set radial limit (0=horizon, 90=zenith) -> Corrected radius calculation means ylim is 0-90
-        ax.set_title(t['graph_title_sky_path'].format(obj_name), va='bottom')
+        ax.set_title(t['graph_title_sky_path'].format(obj_name), va='bottom', color=title_color)
 
-        cbar = fig.colorbar(scatter, ax=ax, label="Time Progression", pad=0.1)
+        # Set grid and spine colors
+        ax.grid(True, linestyle=':', alpha=0.5, color=grid_color)
+        ax.spines['polar'].set_color(label_color) # Color the outer circle
+
+        # Colorbar for time progression
+        cbar = fig.colorbar(scatter, ax=ax, label="Time Progression (UTC)", pad=0.1)
         cbar.set_ticks([0, 1])
         try: # Add try-except for strftime in case times array is weird
-             cbar.ax.set_yticklabels([times[0].datetime.strftime('%H:%M'), times[-1].datetime.strftime('%H:%M')])
-        except:
-             cbar.ax.set_yticklabels(['Start', 'End'])
+            start_label = times[0].to_datetime(timezone.utc).strftime('%H:%M')
+            end_label = times[-1].to_datetime(timezone.utc).strftime('%H:%M')
+            cbar.ax.set_yticklabels([start_label, end_label])
+        except IndexError:
+            cbar.ax.set_yticklabels(['Start', 'End'])
+
+        # Set colorbar label and tick colors
+        cbar.set_label("Time Progression (UTC)", color=label_color)
+        cbar.ax.yaxis.set_tick_params(color=label_color)
+        plt.setp(plt.getp(cbar.ax.axes, 'yticklabels'), color=label_color)
 
 
     else:
@@ -2516,8 +2365,12 @@ def create_plot(plot_data: dict, min_altitude_deg: float, max_altitude_deg: floa
          return None
 
 
-    ax.grid(True, linestyle=':', alpha=0.5)
-    ax.legend(loc='upper right', fontsize='small', facecolor='#333333', framealpha=0.7) # Legend with dark background
+    # Common plot settings
+    # Adjust legend based on theme
+    legend = ax.legend(loc='upper right', fontsize='small', facecolor=legend_facecolor, framealpha=0.7)
+    for text in legend.get_texts():
+        text.set_color(label_color)
+
     plt.tight_layout()
 
     return fig
