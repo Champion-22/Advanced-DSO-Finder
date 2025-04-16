@@ -121,7 +121,7 @@ translations = {
         'direction_filter_header': "**Filter nach Himmelsrichtung**",
         'direction_filter_label': "Zeige Objekte mit höchstem Stand in Richtung:",
         'direction_option_all': "Alle",
-        'object_type_glossary_title': "Objekttyp Glossar",
+        'object_type_glossary_title': "Objekttyp Glossar", # <-- Key Exists Here
         'object_type_glossary': {
             "OCl": "Offener Haufen", "GCl": "Kugelsternhaufen", "Cl+N": "Haufen + Nebel",
             "Gal": "Galaxie", "PN": "Planetarischer Nebel", "SNR": "Supernova-Überrest",
@@ -228,11 +228,343 @@ translations = {
         'donation_text': "Gefällt dir die App? [Unterstütze die Entwicklung auf Ko-fi ☕](https://ko-fi.com/advanceddsofinder)"
     },
     'en': {
-        # ... (other english translations) ...
+        # NOTE: Adding missing keys to prevent KeyError
+        'settings_header': "Settings",
+        'language_select_label': "Language",
+        'location_expander': "📍 Location",
+        'location_select_label': "Select Location Method",
+        'location_option_manual': "Enter Manually",
+        'location_option_search': "Search by Name",
+        'location_search_label': "Enter location name:",
+        'location_search_submit_button': "Find Coordinates",
+        'location_search_placeholder': "e.g. London, UK",
+        'location_search_found': "Found (Nominatim): {}",
+        'location_search_found_fallback': "Found via Fallback (ArcGIS): {}",
+        'location_search_found_fallback2': "Found via 2nd Fallback (Photon): {}",
+        'location_search_coords': "Lat: {:.4f}, Lon: {:.4f}",
+        'location_search_error_not_found': "Location not found.",
+        'location_search_error_service': "Geocoding Service Error: {}",
+        'location_search_error_timeout': "Geocoding Service Timeout.",
+        'location_search_error_refused': "Geocoding connection refused.",
+        'location_search_info_fallback': "Nominatim failed, trying fallback service (ArcGIS)...",
+        'location_search_info_fallback2': "ArcGIS failed, trying 2nd fallback service (Photon)...",
+        'location_search_error_fallback_failed': "Primary (Nominatim) and Fallback (ArcGIS) failed: {}",
+        'location_search_error_fallback2_failed': "All geocoding services (Nominatim, ArcGIS, Photon) failed: {}",
+        'location_lat_label': "Latitude (°N)",
+        'location_lon_label': "Longitude (°E)",
+        'location_elev_label': "Elevation (meters)",
+        'location_manual_display': "Manual ({:.4f}, {:.4f})",
+        'location_search_display': "Search: {} ({:.4f}, {:.4f})",
+        'location_error': "Location Error: {}",
+        'location_error_fallback': "ERROR - Using fallback",
+        'location_error_manual_none': "Manual location fields cannot be empty or invalid.",
+        'time_expander': "⏱️ Time & Timezone",
+        'time_select_label': "Select Time",
+        'time_option_now': "Now (upcoming night)",
+        'time_option_specific': "Specific Night",
+        'time_date_select_label': "Select Date:",
+        'timezone_auto_set_label': "Detected Timezone:",
+        'timezone_auto_fail_label': "Timezone:",
+        'timezone_auto_fail_msg': "Could not detect timezone, using UTC.",
+        'filters_expander': "✨ Filters & Conditions",
+        'mag_filter_header': "**Magnitude Filter**",
+        'mag_filter_method_label': "Filter Method:",
+        'mag_filter_option_bortle': "Bortle Scale",
+        'mag_filter_option_manual': "Manual",
+        'mag_filter_bortle_label': "Bortle Scale:",
+        'mag_filter_bortle_help': "Sky Darkness: 1=Excellent Dark, 9=Inner-city Sky",
+        'mag_filter_min_mag_label': "Min. Magnitude:",
+        'mag_filter_min_mag_help': "Brightest object magnitude to include",
+        'mag_filter_max_mag_label': "Max. Magnitude:",
+        'mag_filter_max_mag_help': "Faintest object magnitude to include",
+        'mag_filter_warning_min_max': "Min. Magnitude is greater than Max. Magnitude!",
+        'min_alt_header': "**Object Altitude Above Horizon**",
+        'min_alt_label': "Min. Object Altitude (°):",
+        'max_alt_label': "Max. Object Altitude (°):",
+        'moon_warning_header': "**Moon Warning**",
+        'moon_warning_label': "Warn if Moon > (% illumination):",
+        'object_types_header': "**Object Types**",
+        'object_types_error_extract': "Could not extract object types from catalog.",
+        'object_types_label': "Filter Types (leave empty for all):",
+        'size_filter_header': "**Angular Size Filter**",
+        'size_filter_label': "Object Size (arcminutes):",
+        'size_filter_help': "Filter objects by their apparent size (major axis). 1 arcminute = 1/60 degree.",
+        'direction_filter_header': "**Filter by Sky Direction**",
+        'direction_filter_label': "Show objects peaking in direction:",
+        'direction_option_all': "All",
+        'object_type_glossary_title': "Object Type Glossary", # <-- INTEGRATED FIX
+        'object_type_glossary': { # <-- INTEGRATED FIX (Basic English translations)
+            "OCl": "Open Cluster", "GCl": "Globular Cluster", "Cl+N": "Cluster + Nebula",
+            "Gal": "Galaxy", "PN": "Planetary Nebula", "SNR": "Supernova Remnant",
+            "Neb": "Nebula (general)", "EmN": "Emission Nebula", "RfN": "Reflection Nebula",
+            "HII": "HII Region", "AGN": "Active Galactic Nucleus"
+        },
+        'results_options_expander': "⚙️ Result Options",
+        'results_options_max_objects_label': "Max. Number of Objects to Display:",
+        'results_options_sort_method_label': "Sort Results By:",
+        'results_options_sort_duration': "Duration & Altitude",
+        'results_options_sort_magnitude': "Brightness",
+        'moon_metric_label': "Moon Illumination (approx.)",
+        'moon_warning_message': "Warning: Moon is brighter ({:.0f}%) than threshold ({:.0f}%)!",
+        'moon_phase_error': "Error calculating moon phase: {}",
+        'find_button_label': "🔭 Find Observable Objects",
+        'search_params_header': "Search Parameters",
+        'search_params_location': "📍 Location: {}",
+        'search_params_time': "⏱️ Time: {}",
+        'search_params_timezone': "🌍 Timezone: {}",
+        'search_params_time_now': "Upcoming night (from {} UTC)",
+        'search_params_time_specific': "Night after {}",
+        'search_params_filter_mag': "✨ Filter: {}",
+        'search_params_filter_mag_bortle': "Bortle {} (<= {:.1f} mag)",
+        'search_params_filter_mag_manual': "Manual ({:.1f}-{:.1f} mag)",
+        'search_params_filter_alt_types': "🔭 Filter: Altitude {}-{}°, Types: {}",
+        'search_params_filter_size': "📐 Filter: Size {:.1f} - {:.1f} arcmin",
+        'search_params_filter_direction': "🧭 Filter: Direction at Max: {}",
+        'search_params_types_all': "All",
+        'search_params_direction_all': "All",
+        'spinner_searching': "Calculating window & searching objects...",
+        'spinner_geocoding': "Searching for location...",
+        'window_info_template': "Observation Window: {} to {} UTC (Astronomical Twilight)",
+        'window_already_passed': "Calculated night window for 'Now' has already passed. Calculating for next night.",
+        'error_no_window': "No valid astronomical darkness window found for the selected date and location.",
+        'error_polar_night': "Astronomical darkness lasts >24h (Polar night?). Using fallback window.",
+        'error_polar_day': "No astronomical darkness occurs (Polar day?). Using fallback window.",
+        'success_objects_found': "{} matching objects found.",
+        'info_showing_list_duration': "Showing {} objects, sorted by visibility duration and culmination altitude:",
+        'info_showing_list_magnitude': "Showing {} objects, sorted by brightness (brightest first):",
+        'error_search_unexpected': "An unexpected error occurred during the search:",
+        'results_list_header': "Result List",
+        'results_export_name': "Name",
+        'results_export_type': "Type",
+        'results_export_constellation': "Constellation",
+        'results_export_mag': "Magnitude",
+        'results_export_size': "Size (arcmin)",
+        'results_export_ra': "RA",
+        'results_export_dec': "Dec",
+        'results_export_max_alt': "Max Altitude (°)",
+        'results_export_az_at_max': "Azimuth at Max (°)",
+        'results_export_direction_at_max': "Direction at Max",
+        'results_export_time_max_utc': "Time at Max (UTC)",
+        'results_export_time_max_local': "Time at Max (Local TZ)",
+        'results_export_cont_duration': "Max Cont. Duration (h)",
+        'results_expander_title': "{} ({}) - Mag: {:.1f}",
+        'google_link_text': "Google",
+        'simbad_link_text': "SIMBAD",
+        'results_coords_header': "**Details:**",
+        'results_constellation_label': "Constellation:",
+        'results_size_label': "Size (Major Axis):",
+        'results_size_value': "{:.1f} arcmin",
+        'results_max_alt_header': "**Max. Altitude:**",
+        'results_azimuth_label': "(Azimuth: {:.1f}°{})",
+        'results_direction_label': ", Direction: {}",
+        'results_best_time_header': "**Best Time (Local TZ):**",
+        'results_cont_duration_header': "**Max. Cont. Duration:**",
+        'results_duration_value': "{:.1f} hours",
+        'graph_type_label': "Graph Type (for all plots):",
+        'graph_type_sky_path': "Sky Path (Az/Alt)",
+        'graph_type_alt_time': "Altitude Plot (Alt/Time)",
+        'results_graph_button': "📈 Show Plot",
+        'results_spinner_plotting': "Creating plot...",
+        'results_graph_error': "Plot Error: {}",
+        'results_graph_not_created': "Could not create plot.",
+        'results_close_graph_button': "Close Plot",
+        'results_save_csv_button': "💾 Save Result List as CSV",
+        'results_csv_filename': "dso_observing_list_{}.csv",
+        'results_csv_export_error': "CSV Export Error: {}",
+        'warning_no_objects_found': "No objects found matching all criteria for the calculated observation window.",
+        'info_initial_prompt': "Welcome! Please **enter coordinates** or **search for a location** to enable object search.",
+        'graph_altitude_label': "Altitude (°)",
+        'graph_azimuth_label': "Azimuth (°)",
+        'graph_min_altitude_label': "Min Altitude ({:.0f}°)",
+        'graph_max_altitude_label': "Max Altitude ({:.0f}°)",
+        'graph_title_sky_path': "Sky Path for {}",
+        'graph_title_alt_time': "Altitude Plot for {}",
+        'graph_ylabel': "Altitude (°)",
+        'custom_target_expander': "Plot Custom Target",
+        'custom_target_ra_label': "Right Ascension (RA):",
+        'custom_target_dec_label': "Declination (Dec):",
+        'custom_target_name_label': "Target Name (Optional):",
+        'custom_target_ra_placeholder': "e.g. 10:45:03.6 or 161.265",
+        'custom_target_dec_placeholder': "e.g. -16:42:58 or -16.716",
+        'custom_target_button': "Create Custom Plot",
+        'custom_target_error_coords': "Invalid RA/Dec format. Use HH:MM:SS.s / DD:MM:SS or decimal degrees.",
+        'custom_target_error_window': "Cannot create plot. Ensure location and time window are valid (you may need to click 'Find Observable Objects' first).",
+        'error_processing_object': "Error processing {}: {}",
+        'window_calc_error': "Error calculating observation window: {}\n{}",
+        'window_fallback_info': "\nUsing fallback window: {} to {} UTC",
+        'error_loading_catalog': "Error loading catalog file: {}", # <-- INTEGRATED FIX
+        'info_catalog_loaded': "Catalog loaded: {} objects.",
+        'warning_catalog_empty': "Catalog file loaded, but no matching objects found after filtering.",
         'donation_text': "Like the app? [Support the development on Ko-fi ☕](https://ko-fi.com/advanceddsofinder)"
     },
     'fr': {
-        # ... (other french translations) ...
+        # NOTE: Adding missing keys to prevent KeyError
+        'settings_header': "Paramètres",
+        'language_select_label': "Langue",
+        'location_expander': "📍 Emplacement",
+        'location_select_label': "Choisir la méthode de localisation",
+        'location_option_manual': "Entrer manuellement",
+        'location_option_search': "Rechercher par nom",
+        'location_search_label': "Entrez le nom du lieu :",
+        'location_search_submit_button': "Trouver les coordonnées",
+        'location_search_placeholder': "ex. Paris, France",
+        'location_search_found': "Trouvé (Nominatim) : {}",
+        'location_search_found_fallback': "Trouvé via le service alternatif (ArcGIS) : {}",
+        'location_search_found_fallback2': "Trouvé via le 2ème service alternatif (Photon) : {}",
+        'location_search_coords': "Lat : {:.4f}, Lon : {:.4f}",
+        'location_search_error_not_found': "Lieu non trouvé.",
+        'location_search_error_service': "Erreur du service de géocodage : {}",
+        'location_search_error_timeout': "Délai d'attente du service de géocodage dépassé.",
+        'location_search_error_refused': "Connexion de géocodage refusée.",
+        'location_search_info_fallback': "Nominatim a échoué, tentative avec le service alternatif (ArcGIS)...",
+        'location_search_info_fallback2': "ArcGIS a échoué, tentative avec le 2ème service alternatif (Photon)...",
+        'location_search_error_fallback_failed': "Échec du service principal (Nominatim) et alternatif (ArcGIS) : {}",
+        'location_search_error_fallback2_failed': "Échec de tous les services de géocodage (Nominatim, ArcGIS, Photon) : {}",
+        'location_lat_label': "Latitude (°N)",
+        'location_lon_label': "Longitude (°E)",
+        'location_elev_label': "Altitude (mètres)",
+        'location_manual_display': "Manuel ({:.4f}, {:.4f})",
+        'location_search_display': "Recherche : {} ({:.4f}, {:.4f})",
+        'location_error': "Erreur de localisation : {}",
+        'location_error_fallback': "ERREUR - Utilisation de la solution de repli",
+        'location_error_manual_none': "Les champs de localisation manuels ne peuvent pas être vides ou invalides.",
+        'time_expander': "⏱️ Heure & Fuseau horaire",
+        'time_select_label': "Choisir l'heure",
+        'time_option_now': "Maintenant (nuit à venir)",
+        'time_option_specific': "Nuit spécifique",
+        'time_date_select_label': "Choisir la date :",
+        'timezone_auto_set_label': "Fuseau horaire détecté :",
+        'timezone_auto_fail_label': "Fuseau horaire :",
+        'timezone_auto_fail_msg': "Impossible de détecter le fuseau horaire, UTC est utilisé.",
+        'filters_expander': "✨ Filtres & Conditions",
+        'mag_filter_header': "**Filtre de Magnitude**",
+        'mag_filter_method_label': "Méthode de filtrage :",
+        'mag_filter_option_bortle': "Échelle de Bortle",
+        'mag_filter_option_manual': "Manuel",
+        'mag_filter_bortle_label': "Échelle de Bortle :",
+        'mag_filter_bortle_help': "Obscurité du ciel : 1=Excellent Noir, 9=Ciel de centre-ville",
+        'mag_filter_min_mag_label': "Magnitude Min. :",
+        'mag_filter_min_mag_help': "Magnitude de l'objet le plus brillant à inclure",
+        'mag_filter_max_mag_label': "Magnitude Max. :",
+        'mag_filter_max_mag_help': "Magnitude de l'objet le plus faible à inclure",
+        'mag_filter_warning_min_max': "Magnitude Min. est supérieure à la Magnitude Max. !",
+        'min_alt_header': "**Altitude de l'objet au-dessus de l'horizon**",
+        'min_alt_label': "Altitude Min. de l'objet (°):",
+        'max_alt_label': "Altitude Max. de l'objet (°):",
+        'moon_warning_header': "**Avertissement Lune**",
+        'moon_warning_label': "Avertir si Lune > (% illumination) :",
+        'object_types_header': "**Types d'objets**",
+        'object_types_error_extract': "Impossible d'extraire les types d'objets du catalogue.",
+        'object_types_label': "Filtrer les types (laisser vide pour tous) :",
+        'size_filter_header': "**Filtre de Taille Angulaire**",
+        'size_filter_label': "Taille de l'objet (arcminutes) :",
+        'size_filter_help': "Filtrer les objets par leur taille apparente (axe majeur). 1 arcminute = 1/60 degré.",
+        'direction_filter_header': "**Filtre par Direction Céleste**",
+        'direction_filter_label': "Afficher les objets culminant en direction de :",
+        'direction_option_all': "Toutes",
+        'object_type_glossary_title': "Glossaire des types d'objets", # <-- INTEGRATED FIX
+        'object_type_glossary': { # <-- INTEGRATED FIX (Basic French translations)
+            "OCl": "Amas Ouvert", "GCl": "Amas Globulaire", "Cl+N": "Amas + Nébuleuse",
+            "Gal": "Galaxie", "PN": "Nébuleuse Planétaire", "SNR": "Rémanent de Supernova",
+            "Neb": "Nébuleuse (général)", "EmN": "Nébuleuse en Émission", "RfN": "Nébuleuse par Réflexion",
+            "HII": "Région HII", "AGN": "Noyau Actif de Galaxie"
+        },
+        'results_options_expander': "⚙️ Options de Résultat",
+        'results_options_max_objects_label': "Nombre Max. d'Objets à Afficher :",
+        'results_options_sort_method_label': "Trier les Résultats Par :",
+        'results_options_sort_duration': "Durée & Altitude",
+        'results_options_sort_magnitude': "Luminosité",
+        'moon_metric_label': "Illumination Lunaire (approx.)",
+        'moon_warning_message': "Attention : La Lune est plus lumineuse ({:.0f}%) que le seuil ({:.0f}%) !",
+        'moon_phase_error': "Erreur de calcul de la phase lunaire : {}",
+        'find_button_label': "🔭 Trouver les Objets Observables",
+        'search_params_header': "Paramètres de Recherche",
+        'search_params_location': "📍 Lieu : {}",
+        'search_params_time': "⏱️ Heure : {}",
+        'search_params_timezone': "🌍 Fuseau horaire : {}",
+        'search_params_time_now': "Nuit prochaine (à partir de {} UTC)",
+        'search_params_time_specific': "Nuit après {}",
+        'search_params_filter_mag': "✨ Filtre : {}",
+        'search_params_filter_mag_bortle': "Bortle {} (<= {:.1f} mag)",
+        'search_params_filter_mag_manual': "Manuel ({:.1f}-{:.1f} mag)",
+        'search_params_filter_alt_types': "🔭 Filtre : Altitude {}-{}°, Types : {}",
+        'search_params_filter_size': "📐 Filtre : Taille {:.1f} - {:.1f} arcmin",
+        'search_params_filter_direction': "🧭 Filtre : Direction au Max : {}",
+        'search_params_types_all': "Tous",
+        'search_params_direction_all': "Toutes",
+        'spinner_searching': "Calcul de la fenêtre & recherche des objets...",
+        'spinner_geocoding': "Recherche de l'emplacement...",
+        'window_info_template': "Fenêtre d'Observation : {} à {} UTC (Crépuscule Astronomique)",
+        'window_already_passed': "La fenêtre nocturne calculée pour 'Maintenant' est déjà passée. Calcul pour la nuit suivante.",
+        'error_no_window': "Aucune fenêtre de noirceur astronomique valide trouvée pour la date et le lieu sélectionnés.",
+        'error_polar_night': "La noirceur astronomique dure >24h (Nuit polaire ?). Utilisation de la fenêtre de secours.",
+        'error_polar_day': "Aucune noirceur astronomique ne se produit (Jour polaire ?). Utilisation de la fenêtre de secours.",
+        'success_objects_found': "{} objets correspondants trouvés.",
+        'info_showing_list_duration': "Affichage de {} objets, triés par durée de visibilité et altitude de culmination :",
+        'info_showing_list_magnitude': "Affichage de {} objets, triés par luminosité (le plus brillant en premier) :",
+        'error_search_unexpected': "Une erreur inattendue s'est produite lors de la recherche :",
+        'results_list_header': "Liste des Résultats",
+        'results_export_name': "Nom",
+        'results_export_type': "Type",
+        'results_export_constellation': "Constellation",
+        'results_export_mag': "Magnitude",
+        'results_export_size': "Taille (arcmin)",
+        'results_export_ra': "AD",
+        'results_export_dec': "Dec",
+        'results_export_max_alt': "Altitude Max (°)",
+        'results_export_az_at_max': "Azimut au Max (°)",
+        'results_export_direction_at_max': "Direction au Max",
+        'results_export_time_max_utc': "Heure au Max (UTC)",
+        'results_export_time_max_local': "Heure au Max (Fuseau Local)",
+        'results_export_cont_duration': "Durée Cont. Max (h)",
+        'results_expander_title': "{} ({}) - Mag : {:.1f}",
+        'google_link_text': "Google",
+        'simbad_link_text': "SIMBAD",
+        'results_coords_header': "**Détails :**",
+        'results_constellation_label': "Constellation :",
+        'results_size_label': "Taille (Axe Majeur) :",
+        'results_size_value': "{:.1f} arcmin",
+        'results_max_alt_header': "**Altitude Max. :**",
+        'results_azimuth_label': "(Azimut : {:.1f}°{})",
+        'results_direction_label': ", Direction : {}",
+        'results_best_time_header': "**Meilleure Heure (Fuseau Local) :**",
+        'results_cont_duration_header': "**Durée Cont. Max. :**",
+        'results_duration_value': "{:.1f} heures",
+        'graph_type_label': "Type de Graphique (pour tous les graph.) :",
+        'graph_type_sky_path': "Trajectoire Céleste (Az/Alt)",
+        'graph_type_alt_time': "Courbe d'Altitude (Alt/Temps)",
+        'results_graph_button': "📈 Afficher le Graphique",
+        'results_spinner_plotting': "Création du graphique...",
+        'results_graph_error': "Erreur Graphique : {}",
+        'results_graph_not_created': "Impossible de créer le graphique.",
+        'results_close_graph_button': "Fermer le Graphique",
+        'results_save_csv_button': "💾 Enregistrer la Liste comme CSV",
+        'results_csv_filename': "liste_observation_dso_{}.csv",
+        'results_csv_export_error': "Erreur Export CSV : {}",
+        'warning_no_objects_found': "Aucun objet trouvé correspondant à tous les critères pour la fenêtre d'observation calculée.",
+        'info_initial_prompt': "Bienvenue ! Veuillez **entrer les coordonnées** ou **rechercher un lieu** pour activer la recherche d'objets.",
+        'graph_altitude_label': "Altitude (°)",
+        'graph_azimuth_label': "Azimut (°)",
+        'graph_min_altitude_label': "Altitude Min ({:.0f}°)",
+        'graph_max_altitude_label': "Altitude Max ({:.0f}°)",
+        'graph_title_sky_path': "Trajectoire céleste pour {}",
+        'graph_title_alt_time': "Courbe d'altitude pour {}",
+        'graph_ylabel': "Altitude (°)",
+        'custom_target_expander': "Graphique Cible Personnalisée",
+        'custom_target_ra_label': "Ascension Droite (AD) :",
+        'custom_target_dec_label': "Déclinaison (Dec) :",
+        'custom_target_name_label': "Nom de la Cible (Optionnel) :",
+        'custom_target_ra_placeholder': "ex. 10:45:03.6 ou 161.265",
+        'custom_target_dec_placeholder': "ex. -16:42:58 ou -16.716",
+        'custom_target_button': "Créer Graphique Personnalisé",
+        'custom_target_error_coords': "Format AD/Dec invalide. Utilisez HH:MM:SS.s / DD:MM:SS ou degrés décimaux.",
+        'custom_target_error_window': "Impossible de créer le graphique. Assurez-vous que le lieu et la fenêtre temporelle sont valides (vous devrez peut-être cliquer d'abord sur 'Trouver les Objets Observables').",
+        'error_processing_object': "Erreur lors du traitement de {}: {}",
+        'window_calc_error': "Erreur lors du calcul de la fenêtre d'observation : {}\n{}",
+        'window_fallback_info': "\nFenêtre de secours utilisée : {} à {} UTC",
+        'error_loading_catalog': "Erreur lors du chargement du fichier catalogue : {}", # <-- INTEGRATED FIX
+        'info_catalog_loaded': "Catalogue chargé : {} objets.",
+        'warning_catalog_empty': "Fichier catalogue chargé, mais aucun objet correspondant trouvé après filtrage.",
         'donation_text': "Vous aimez l'application ? [Soutenez le développement sur Ko-fi ☕](https://ko-fi.com/advanceddsofinder)"
     }
 }
@@ -401,9 +733,10 @@ def load_ongc_data(catalog_path: str, lang: str) -> pd.DataFrame | None:
 
     try:
         if not os.path.exists(catalog_path):
-            st.error(f"{t_load['error_loading_catalog'].split(':')[0]}: File not found at {catalog_path}")
-            st.info(f"Please ensure the file '{CATALOG_FILENAME}' is in the directory: {APP_DIR}")
-            return None
+             # Use the 'error_loading_catalog' key which is now guaranteed to exist
+             st.error(f"{t_load['error_loading_catalog'].split(':')[0]}: File not found at {catalog_path}")
+             st.info(f"Please ensure the file '{CATALOG_FILENAME}' is in the directory: {APP_DIR}")
+             return None
 
         # Read the CSV file
         df = pd.read_csv(catalog_path, sep=';', comment='#', low_memory=False)
@@ -516,6 +849,8 @@ def load_ongc_data(catalog_path: str, lang: str) -> pd.DataFrame | None:
             return None
 
     except FileNotFoundError:
+        # This specific handler might not be strictly needed anymore if os.path.exists catches it,
+        # but it's safe to leave it. It will now use the correct translation key.
         st.error(f"{t_load['error_loading_catalog'].split(':')[0]}: File not found at {catalog_path}")
         st.info(f"Please ensure the file '{CATALOG_FILENAME}' is in the directory: {APP_DIR}")
         return None
@@ -524,6 +859,7 @@ def load_ongc_data(catalog_path: str, lang: str) -> pd.DataFrame | None:
         st.info("Please ensure the file is a valid CSV with ';' separator.")
         return None
     except Exception as e:
+        # Use the 'error_loading_catalog' key which is now guaranteed to exist
         st.error(f"{t_load['error_loading_catalog']}: An unexpected error occurred: {e}")
         traceback.print_exc() # Print full traceback to console for debugging
         return None
@@ -608,15 +944,15 @@ def get_observable_window(observer: Observer, reference_time: Time, is_now: bool
                     status_message += t['window_fallback_info'].format(start_time.iso, end_time.iso)
                     return start_time, end_time, status_message
                 elif sun_alt_ref > -18*u.deg: # Check polar day more thoroughly
-                     times_check = calc_base_time + np.linspace(0, 24, 49)*u.hour
-                     sun_alts_check = observer.sun_altaz(times_check).alt
-                     if np.min(sun_alts_check) > -18*u.deg:
-                         status_message = t['error_polar_day']
-                         start_time, end_time = _get_fallback_window(calc_base_time)
-                         status_message += t['window_fallback_info'].format(start_time.iso, end_time.iso)
-                         return start_time, end_time, status_message
+                    times_check = calc_base_time + np.linspace(0, 24, 49)*u.hour
+                    sun_alts_check = observer.sun_altaz(times_check).alt
+                    if np.min(sun_alts_check) > -18*u.deg:
+                        status_message = t['error_polar_day']
+                        start_time, end_time = _get_fallback_window(calc_base_time)
+                        status_message += t['window_fallback_info'].format(start_time.iso, end_time.iso)
+                        return start_time, end_time, status_message
             except Exception as check_e:
-                 print(f"Error during polar check: {check_e}")
+                print(f"Error during polar check: {check_e}")
             # If not clearly polar night/day, raise the original error
             raise ValueError("Calculated morning twilight is not after evening twilight.")
 
@@ -662,7 +998,7 @@ def get_observable_window(observer: Observer, reference_time: Time, is_now: bool
                     if np.min(sun_alts_check) > -18*u.deg:
                         status_message = t['error_polar_day']
                     else: # Normal error if twilight calculation failed but it's not polar day/night
-                         status_message = t['window_calc_error'].format(error_detail, " (Check location/time)")
+                        status_message = t['window_calc_error'].format(error_detail, " (Check location/time)")
                 else: # Normal error if twilight calculation failed
                     status_message = t['window_calc_error'].format(error_detail, traceback.format_exc())
             except Exception as check_e:
@@ -736,7 +1072,7 @@ def find_observable_objects(observer_location: EarthLocation,
         print("Input catalog_df is empty. No objects to process.")
         return []
     if len(observing_times) < 2:
-         st.warning("Observing window has less than 2 time points. Duration calculation might be inaccurate.")
+        st.warning("Observing window has less than 2 time points. Duration calculation might be inaccurate.")
 
 
     # Pre-calculate AltAz frame for efficiency
@@ -744,8 +1080,8 @@ def find_observable_objects(observer_location: EarthLocation,
     min_alt_deg = min_altitude_limit.to(u.deg).value
     time_step_hours = 0 # Initialize outside loop
     if len(observing_times) > 1:
-         time_diff_seconds = (observing_times[1] - observing_times[0]).sec
-         time_step_hours = time_diff_seconds / 3600.0
+        time_diff_seconds = (observing_times[1] - observing_times[0]).sec
+        time_step_hours = time_diff_seconds / 3600.0
 
 
     # --- Iterate through Catalog Objects ---
@@ -895,12 +1231,14 @@ def main():
     if lang not in translations:
         lang = 'de' # Default to German if invalid language in state
         st.session_state.language = lang
+    # *** FIX: Ensure 't' is assigned *after* potentially correcting lang ***
     t = translations[lang] # Get translation dictionary for the selected language
 
     # --- Load Catalog Data (Cached) ---
     @st.cache_data
     def cached_load_ongc_data(path, current_lang):
         print(f"Cache miss: Loading ONGC data from {path} for lang={current_lang}")
+        # Pass the corrected lang value here too
         return load_ongc_data(path, current_lang)
 
     df_catalog_data = cached_load_ongc_data(CATALOG_FILEPATH, lang)
@@ -916,8 +1254,10 @@ def main():
     # st.caption(f"Version {APP_VERSION}") # Removed version caption
 
     # --- Object Type Glossary ---
+    # *** FIX: Check if the key exists before using it, or rely on the earlier fix in translations dict ***
+    # The earlier fix (adding the key to 'en' and 'fr') is better. This line should now work.
     with st.expander(t['object_type_glossary_title']):
-        glossary_items = t.get('object_type_glossary', {})
+        glossary_items = t.get('object_type_glossary', {}) # Use .get for safety in case glossary dict is missing
         if glossary_items:
             col1, col2 = st.columns(2)
             col_index = 0
@@ -976,7 +1316,8 @@ def main():
         if selected_lang_key != st.session_state.language:
             st.session_state.language = selected_lang_key
             st.session_state.location_search_status_msg = ""
-            st.rerun()
+            # No need to rerun here, the change will be picked up at the start of the next run
+            # st.rerun() # Rerun can cause issues if not handled carefully
 
         # --- Location Settings ---
         with st.expander(t['location_expander'], expanded=True):
@@ -1051,9 +1392,9 @@ def main():
                             print(f"Nominatim failed: {e}. Trying fallback 1 (ArcGIS).")
                             status_placeholder.info(t['location_search_info_fallback'])
                         except Exception as e:
-                             print(f"Nominatim failed unexpectedly: {e}. Trying fallback 1 (ArcGIS).")
-                             status_placeholder.info(t['location_search_info_fallback'])
-                             final_error = e
+                            print(f"Nominatim failed unexpectedly: {e}. Trying fallback 1 (ArcGIS).")
+                            status_placeholder.info(t['location_search_info_fallback'])
+                            final_error = e
 
                         # Try ArcGIS (Fallback 1)
                         if not location:
@@ -1175,7 +1516,7 @@ def main():
         with st.expander(t['time_expander'], expanded=False):
             time_options_map = {'Now': t['time_option_now'], 'Specific': t['time_option_specific']}
             # if st.session_state.get("time_choice_exp", "Now") not in time_options_map:
-            #     st.session_state.time_choice_exp = "Now" # Default already set in initialize
+            #    st.session_state.time_choice_exp = "Now" # Default already set in initialize
 
             time_choice_key = st.radio(
                 t['time_select_label'], options=list(time_options_map.keys()),
@@ -1213,8 +1554,8 @@ def main():
                 st.session_state.mag_filter_mode_exp = 'Bortle Scale'
 
             st.radio(t['mag_filter_method_label'], options=list(mag_filter_options_map.keys()),
-                     format_func=lambda key: mag_filter_options_map[key],
-                     key="mag_filter_mode_exp", horizontal=True)
+                              format_func=lambda key: mag_filter_options_map[key],
+                              key="mag_filter_mode_exp", horizontal=True)
 
             st.slider(t['mag_filter_bortle_label'], min_value=1, max_value=9, key='bortle_slider', help=t['mag_filter_bortle_help'])
 
@@ -1242,7 +1583,7 @@ def main():
             st.slider(t['max_alt_label'], min_value=0, max_value=90, key='max_alt_slider', step=1)
             # Re-check min/max after both sliders are drawn
             if st.session_state.min_alt_slider > st.session_state.max_alt_slider:
-                 st.warning("Min. Höhe ist größer als Max. Höhe!")
+                st.warning("Min. Höhe ist größer als Max. Höhe!")
 
 
             # --- Moon Filter ---
@@ -1313,13 +1654,13 @@ def main():
                     st.error(f"Error setting up size slider: {size_slider_e}")
                     size_slider_disabled = True
             else:
-                 st.info("Angular size data ('MajAx') not found or invalid. Size filter disabled.")
+                st.info("Angular size data ('MajAx') not found or invalid. Size filter disabled.")
 
             if size_slider_disabled:
-                 st.slider(
-                     t['size_filter_label'], min_value=0.0, max_value=1.0, value=(0.0, 1.0),
-                     key='size_arcmin_range', disabled=True
-                 )
+                st.slider(
+                    t['size_filter_label'], min_value=0.0, max_value=1.0, value=(0.0, 1.0),
+                    key='size_arcmin_range', disabled=True
+                )
 
 
             # --- Direction Filter ---
@@ -1399,21 +1740,21 @@ def main():
     location_display = t['location_error'].format("Not Set")
     observer_for_run = None
     if st.session_state.location_is_valid_for_run:
-         lat = st.session_state.manual_lat_val
-         lon = st.session_state.manual_lon_val
-         height = st.session_state.manual_height_val
-         tz_str = st.session_state.selected_timezone
-         try:
-             observer_for_run = Observer(latitude=lat * u.deg, longitude=lon * u.deg, elevation=height * u.m, timezone=tz_str)
-             if st.session_state.location_choice_key == "Manual":
-                 location_display = t['location_manual_display'].format(lat, lon)
-             elif st.session_state.searched_location_name:
-                 location_display = t['location_search_display'].format(st.session_state.searched_location_name, lat, lon)
-             else:
-                  location_display = f"Lat: {lat:.4f}, Lon: {lon:.4f}"
-         except Exception as obs_e:
-              location_display = t['location_error'].format(f"Observer creation failed: {obs_e}")
-              st.session_state.location_is_valid_for_run = False
+        lat = st.session_state.manual_lat_val
+        lon = st.session_state.manual_lon_val
+        height = st.session_state.manual_height_val
+        tz_str = st.session_state.selected_timezone
+        try:
+            observer_for_run = Observer(latitude=lat * u.deg, longitude=lon * u.deg, elevation=height * u.m, timezone=tz_str)
+            if st.session_state.location_choice_key == "Manual":
+                location_display = t['location_manual_display'].format(lat, lon)
+            elif st.session_state.searched_location_name:
+                location_display = t['location_search_display'].format(st.session_state.searched_location_name, lat, lon)
+            else:
+                location_display = f"Lat: {lat:.4f}, Lon: {lon:.4f}"
+        except Exception as obs_e:
+             location_display = t['location_error'].format(f"Observer creation failed: {obs_e}")
+             st.session_state.location_is_valid_for_run = False
 
     param_col1.markdown(t['search_params_location'].format(location_display))
 
@@ -1468,7 +1809,7 @@ def main():
     # Direction Filter Display
     direction_disp = st.session_state.selected_peak_direction
     if direction_disp == ALL_DIRECTIONS_KEY:
-         direction_disp = t['search_params_direction_all']
+        direction_disp = t['search_params_direction_all']
     param_col2.markdown(t['search_params_filter_direction'].format(direction_disp)) # Uses updated translation
 
 
@@ -1477,7 +1818,7 @@ def main():
     find_button_clicked = st.button(t['find_button_label'], key="find_button", disabled=(df_catalog_data is None or not st.session_state.location_is_valid_for_run))
 
     if not st.session_state.location_is_valid_for_run and df_catalog_data is not None:
-         st.warning(t['info_initial_prompt'])
+        st.warning(t['info_initial_prompt'])
 
 
     # --- Results Area ---
@@ -1610,12 +1951,12 @@ def main():
                     st.session_state.window_start_time = None
                     st.session_state.window_end_time = None
         else: # Observer or catalog invalid
-             if df_catalog_data is None: results_placeholder.error("Cannot search: Catalog data not loaded.")
-             if not observer_for_run: results_placeholder.error("Cannot search: Location is not valid.")
-             st.session_state.last_results = []
-             # Ensure window times are None in session state
-             st.session_state.window_start_time = None
-             st.session_state.window_end_time = None
+            if df_catalog_data is None: results_placeholder.error("Cannot search: Catalog data not loaded.")
+            if not observer_for_run: results_placeholder.error("Cannot search: Location is not valid.")
+            st.session_state.last_results = []
+            # Ensure window times are None in session state
+            st.session_state.window_start_time = None
+            st.session_state.window_end_time = None
 
 
     # --- Display Results Block ---
@@ -1661,11 +2002,11 @@ def main():
              st.session_state.plot_type_selection = 'Sky Path'
 
         results_placeholder.radio(
-             t['graph_type_label'],
-             options=list(plot_options_map.keys()),
-             format_func=lambda key: plot_options_map[key],
-             key='plot_type_selection',
-             horizontal=True
+            t['graph_type_label'],
+            options=list(plot_options_map.keys()),
+            format_func=lambda key: plot_options_map[key],
+            key='plot_type_selection',
+            horizontal=True
         )
 
         # --- Display Individual Objects ---
@@ -1795,7 +2136,7 @@ def main():
                     key='csv_download_button'
                 )
             except Exception as csv_e:
-                 csv_export_placeholder.error(t['results_csv_export_error'].format(csv_e))
+                csv_export_placeholder.error(t['results_csv_export_error'].format(csv_e))
 
     elif st.session_state.find_button_pressed: # Show message if button was pressed but no results
         results_placeholder.info(t['warning_no_objects_found'])
@@ -1804,96 +2145,96 @@ def main():
     # --- Custom Target Plotting ---
     st.markdown("---")
     with st.expander(t['custom_target_expander']):
-         with st.form("custom_target_form"):
-              st.text_input(t['custom_target_ra_label'], key="custom_target_ra", placeholder=t['custom_target_ra_placeholder'])
-              st.text_input(t['custom_target_dec_label'], key="custom_target_dec", placeholder=t['custom_target_dec_placeholder'])
-              st.text_input(t['custom_target_name_label'], key="custom_target_name", placeholder="Mein Komet") # German placeholder
-              custom_plot_submitted = st.form_submit_button(t['custom_target_button'])
+        with st.form("custom_target_form"):
+             st.text_input(t['custom_target_ra_label'], key="custom_target_ra", placeholder=t['custom_target_ra_placeholder'])
+             st.text_input(t['custom_target_dec_label'], key="custom_target_dec", placeholder=t['custom_target_dec_placeholder'])
+             st.text_input(t['custom_target_name_label'], key="custom_target_name", placeholder="Mein Komet") # German placeholder
+             custom_plot_submitted = st.form_submit_button(t['custom_target_button'])
 
-         custom_plot_error_placeholder = st.empty()
-         custom_plot_display_area = st.empty()
+        custom_plot_error_placeholder = st.empty()
+        custom_plot_display_area = st.empty()
 
-         if custom_plot_submitted:
-              st.session_state.show_plot = False
-              st.session_state.show_custom_plot = False
-              st.session_state.custom_target_plot_data = None
-              st.session_state.custom_target_error = ""
+        if custom_plot_submitted:
+             st.session_state.show_plot = False
+             st.session_state.show_custom_plot = False
+             st.session_state.custom_target_plot_data = None
+             st.session_state.custom_target_error = ""
 
-              custom_ra = st.session_state.custom_target_ra
-              custom_dec = st.session_state.custom_target_dec
-              custom_name = st.session_state.custom_target_name or "Eigenes Ziel" # German default
+             custom_ra = st.session_state.custom_target_ra
+             custom_dec = st.session_state.custom_target_dec
+             custom_name = st.session_state.custom_target_name or "Eigenes Ziel" # German default
 
-              # Retrieve window times from session state if available
-              window_start_cust = st.session_state.get('window_start_time')
-              window_end_cust = st.session_state.get('window_end_time')
+             # Retrieve window times from session state if available
+             window_start_cust = st.session_state.get('window_start_time')
+             window_end_cust = st.session_state.get('window_end_time')
 
-              if not custom_ra or not custom_dec:
-                   st.session_state.custom_target_error = t['custom_target_error_coords']
-                   custom_plot_error_placeholder.error(st.session_state.custom_target_error)
-              # Check if observer exists and window times are valid Time objects
-              elif not observer_for_run or not isinstance(window_start_cust, Time) or not isinstance(window_end_cust, Time):
-                   st.session_state.custom_target_error = t['custom_target_error_window']
-                   custom_plot_error_placeholder.error(st.session_state.custom_target_error)
-              else:
-                   try:
-                        custom_coord = SkyCoord(ra=custom_ra, dec=custom_dec, unit=(u.hourangle, u.deg))
+             if not custom_ra or not custom_dec:
+                 st.session_state.custom_target_error = t['custom_target_error_coords']
+                 custom_plot_error_placeholder.error(st.session_state.custom_target_error)
+             # Check if observer exists and window times are valid Time objects
+             elif not observer_for_run or not isinstance(window_start_cust, Time) or not isinstance(window_end_cust, Time):
+                 st.session_state.custom_target_error = t['custom_target_error_window']
+                 custom_plot_error_placeholder.error(st.session_state.custom_target_error)
+             else:
+                 try:
+                     custom_coord = SkyCoord(ra=custom_ra, dec=custom_dec, unit=(u.hourangle, u.deg))
 
-                        # Use times from the main search window
-                        if window_start_cust < window_end_cust:
-                            time_resolution_cust = 5 * u.minute
-                            observing_times_custom = Time(np.arange(window_start_cust.jd, window_end_cust.jd, time_resolution_cust.to(u.day).value), format='jd', scale='utc')
-                        else:
-                            raise ValueError("Valid time window from main search not available for custom plot.")
+                     # Use times from the main search window
+                     if window_start_cust < window_end_cust:
+                         time_resolution_cust = 5 * u.minute
+                         observing_times_custom = Time(np.arange(window_start_cust.jd, window_end_cust.jd, time_resolution_cust.to(u.day).value), format='jd', scale='utc')
+                     else:
+                         raise ValueError("Valid time window from main search not available for custom plot.")
 
-                        if len(observing_times_custom) < 2:
-                            raise ValueError("Calculated time window for custom plot is too short.")
+                     if len(observing_times_custom) < 2:
+                         raise ValueError("Calculated time window for custom plot is too short.")
 
 
-                        altaz_frame_custom = AltAz(obstime=observing_times_custom, location=observer_for_run.location)
-                        custom_altazs = custom_coord.transform_to(altaz_frame_custom)
-                        custom_alts = custom_altazs.alt.to(u.deg).value
-                        custom_azs = custom_altazs.az.to(u.deg).value
+                     altaz_frame_custom = AltAz(obstime=observing_times_custom, location=observer_for_run.location)
+                     custom_altazs = custom_coord.transform_to(altaz_frame_custom)
+                     custom_alts = custom_altazs.alt.to(u.deg).value
+                     custom_azs = custom_altazs.az.to(u.deg).value
 
-                        st.session_state.custom_target_plot_data = {
-                            'Name': custom_name,
-                            'altitudes': custom_alts,
-                            'azimuths': custom_azs,
-                            'times': observing_times_custom
-                        }
-                        st.session_state.show_custom_plot = True
-                        st.session_state.custom_target_error = ""
-                        st.rerun()
+                     st.session_state.custom_target_plot_data = {
+                         'Name': custom_name,
+                         'altitudes': custom_alts,
+                         'azimuths': custom_azs,
+                         'times': observing_times_custom
+                     }
+                     st.session_state.show_custom_plot = True
+                     st.session_state.custom_target_error = ""
+                     st.rerun()
 
-                   except ValueError as custom_coord_err:
-                        st.session_state.custom_target_error = f"{t['custom_target_error_coords']} ({custom_coord_err})"
-                        custom_plot_error_placeholder.error(st.session_state.custom_target_error)
-                   except Exception as custom_e:
-                        st.session_state.custom_target_error = f"Error creating custom plot: {custom_e}"
-                        custom_plot_error_placeholder.error(st.session_state.custom_target_error)
-                        traceback.print_exc()
+                 except ValueError as custom_coord_err:
+                     st.session_state.custom_target_error = f"{t['custom_target_error_coords']} ({custom_coord_err})"
+                     custom_plot_error_placeholder.error(st.session_state.custom_target_error)
+                 except Exception as custom_e:
+                     st.session_state.custom_target_error = f"Error creating custom plot: {custom_e}"
+                     custom_plot_error_placeholder.error(st.session_state.custom_target_error)
+                     traceback.print_exc()
 
-         # Display custom plot
-         if st.session_state.show_custom_plot and st.session_state.custom_target_plot_data:
-               custom_plot_data = st.session_state.custom_target_plot_data
-               min_alt_line_cust = st.session_state.min_alt_slider
-               max_alt_line_cust = st.session_state.max_alt_slider # Get max alt
+        # Display custom plot
+        if st.session_state.show_custom_plot and st.session_state.custom_target_plot_data:
+            custom_plot_data = st.session_state.custom_target_plot_data
+            min_alt_line_cust = st.session_state.min_alt_slider
+            max_alt_line_cust = st.session_state.max_alt_slider # Get max alt
 
-               with custom_plot_display_area.container():
-                   st.markdown("---")
-                   with st.spinner(t['results_spinner_plotting']):
-                       try:
-                           # Pass max altitude to plotting function
-                           fig_cust = create_plot(custom_plot_data, min_alt_line_cust, max_alt_line_cust, st.session_state.plot_type_selection, lang)
-                           if fig_cust:
-                               st.pyplot(fig_cust)
-                               if st.button(t['results_close_graph_button'], key="close_custom_plot"):
-                                   st.session_state.show_custom_plot = False
-                                   st.session_state.custom_target_plot_data = None
-                                   st.rerun()
-                           else: st.error(t['results_graph_not_created'])
-                       except Exception as plot_err_cust:
-                           st.error(t['results_graph_error'].format(plot_err_cust))
-                           traceback.print_exc()
+            with custom_plot_display_area.container():
+                 st.markdown("---")
+                 with st.spinner(t['results_spinner_plotting']):
+                     try:
+                         # Pass max altitude to plotting function
+                         fig_cust = create_plot(custom_plot_data, min_alt_line_cust, max_alt_line_cust, st.session_state.plot_type_selection, lang)
+                         if fig_cust:
+                             st.pyplot(fig_cust)
+                             if st.button(t['results_close_graph_button'], key="close_custom_plot"):
+                                 st.session_state.show_custom_plot = False
+                                 st.session_state.custom_target_plot_data = None
+                                 st.rerun()
+                         else: st.error(t['results_graph_not_created'])
+                     except Exception as plot_err_cust:
+                         st.error(t['results_graph_error'].format(plot_err_cust))
+                         traceback.print_exc()
 
     # --- Add Donation Link at the bottom ---
     st.markdown("---") # Add a separator line
@@ -1951,9 +2292,9 @@ def create_plot(plot_data: dict, min_altitude_deg: float, max_altitude_deg: floa
     obj_name = plot_data.get('Name', 'Object')
 
     if times is None or altitudes is None or len(times) != len(altitudes):
-         print("Error: Mismatched or missing times/altitudes for plotting.")
-         plt.close(fig) # Close the figure to avoid display issues
-         return None
+        print("Error: Mismatched or missing times/altitudes for plotting.")
+        plt.close(fig) # Close the figure to avoid display issues
+        return None
 
     plot_times = times.plot_date
 
@@ -1981,11 +2322,11 @@ def create_plot(plot_data: dict, min_altitude_deg: float, max_altitude_deg: floa
 
         # Colorbar might be less useful without azimuth coloring
         # if azimuths is not None:
-        #     cbar = fig.colorbar(scatter, ax=ax, label=t['graph_azimuth_label'], ticks=np.linspace(0, 360, 9))
-        #     cbar.ax.set_yticklabels(['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'N'])
-        #     cbar.ax.yaxis.set_tick_params(color=label_color)
-        #     cbar.set_label(t['graph_azimuth_label'], color=label_color)
-        #     plt.setp(plt.getp(cbar.ax.axes, 'yticklabels'), color=label_color)
+        #    cbar = fig.colorbar(scatter, ax=ax, label=t['graph_azimuth_label'], ticks=np.linspace(0, 360, 9))
+        #    cbar.ax.set_yticklabels(['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'N'])
+        #    cbar.ax.yaxis.set_tick_params(color=label_color)
+        #    cbar.set_label(t['graph_azimuth_label'], color=label_color)
+        #    plt.setp(plt.getp(cbar.ax.axes, 'yticklabels'), color=label_color)
 
     elif plot_type == 'Sky Path':
         if azimuths is None:
@@ -2045,9 +2386,9 @@ def create_plot(plot_data: dict, min_altitude_deg: float, max_altitude_deg: floa
 
 
     else:
-         print(f"Error: Unknown plot type '{plot_type}'")
-         plt.close(fig)
-         return None
+        print(f"Error: Unknown plot type '{plot_type}'")
+        plt.close(fig)
+        return None
 
 
     # Common plot settings
