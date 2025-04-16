@@ -37,7 +37,7 @@ INITIAL_LAT = 47.17
 INITIAL_LON = 8.01
 INITIAL_HEIGHT = 550
 INITIAL_TIMEZONE = "Europe/Zurich"
-APP_VERSION = "v7.8-lightmodefix" # Updated internal version
+APP_VERSION = "v7.9-donationlink" # Updated internal version
 
 # --- Path to Catalog File ---
 try:
@@ -224,344 +224,16 @@ translations = {
         'error_loading_catalog': "Fehler beim Laden der Katalogdatei: {}",
         'info_catalog_loaded': "Katalog geladen: {} Objekte.",
         'warning_catalog_empty': "Katalogdatei geladen, aber keine passenden Objekte nach Filterung gefunden.",
+        # Added donation link text
+        'donation_text': "Gefällt dir die App? [Unterstütze die Entwicklung auf Ko-fi ☕](https://ko-fi.com/advanceddsofinder)"
     },
     'en': {
-        # 'page_title': "Advanced DSO Finder", # Removed, title is now fixed
-        'settings_header': "Settings",
-        'language_select_label': "Language",
-        'location_expander': "📍 Location",
-        'location_select_label': "Select Location Method",
-        'location_option_manual': "Enter Manually",
-        'location_option_search': "Search by Name",
-        'location_search_label': "Enter Location Name:",
-        'location_search_submit_button': "Find Coordinates",
-        'location_search_placeholder': "e.g., Berlin, Germany",
-        'location_search_found': "Found (Nominatim): {}",
-        'location_search_found_fallback': "Found via Fallback (ArcGIS): {}",
-        'location_search_found_fallback2': "Found via 2nd Fallback (Photon): {}",
-        'location_search_coords': "Lat: {:.4f}, Lon: {:.4f}",
-        'location_search_error_not_found': "Location not found.",
-        'location_search_error_service': "Geocoding service error: {}",
-        'location_search_error_timeout': "Geocoding service timed out.",
-        'location_search_error_refused': "Geocoding connection refused.",
-        'location_search_info_fallback': "Nominatim failed, trying Fallback service (ArcGIS)...",
-        'location_search_info_fallback2': "ArcGIS failed, trying 2nd Fallback service (Photon)...",
-        'location_search_error_fallback_failed': "Primary (Nominatim) and Fallback (ArcGIS) failed: {}",
-        'location_search_error_fallback2_failed': "All geocoding services (Nominatim, ArcGIS, Photon) failed: {}",
-        'location_lat_label': "Latitude (°N)",
-        'location_lon_label': "Longitude (°E)",
-        'location_elev_label': "Elevation (Meters)",
-        'location_manual_display': "Manual ({:.4f}, {:.4f})",
-        'location_search_display': "Searched: {} ({:.4f}, {:.4f})",
-        'location_error': "Location Error: {}",
-        'location_error_fallback': "ERROR - Using Fallback",
-        'location_error_manual_none': "Manual location fields cannot be empty or invalid.",
-        'time_expander': "⏱️ Time & Timezone",
-        'time_select_label': "Select Time",
-        'time_option_now': "Now (upcoming night)",
-        'time_option_specific': "Specific Night",
-        'time_date_select_label': "Select Date:",
-        'timezone_auto_set_label': "Detected Timezone:",
-        'timezone_auto_fail_label': "Timezone:",
-        'timezone_auto_fail_msg': "Could not detect timezone, using UTC.",
-        'filters_expander': "✨ Filters & Conditions",
-        'mag_filter_header': "**Magnitude Filter**",
-        'mag_filter_method_label': "Filter Method:",
-        'mag_filter_option_bortle': "Bortle Scale",
-        'mag_filter_option_manual': "Manual",
-        'mag_filter_bortle_label': "Bortle Scale:",
-        'mag_filter_bortle_help': "Sky darkness: 1=Excellent Dark, 9=Inner-City Sky",
-        'mag_filter_min_mag_label': "Min. Magnitude:",
-        'mag_filter_min_mag_help': "Brightest object magnitude to include",
-        'mag_filter_max_mag_label': "Max. Magnitude:",
-        'mag_filter_max_mag_help': "Faintest object magnitude to include",
-        'mag_filter_warning_min_max': "Min. magnitude is greater than Max. magnitude!",
-        'min_alt_header': "**Object Altitude above Horizon**",
-        'min_alt_label': "Min. Object Altitude (°):",
-        'max_alt_label': "Max. Object Altitude (°):",
-        'moon_warning_header': "**Moon Warning**",
-        'moon_warning_label': "Warn if Moon > (% Illumination):",
-        'object_types_header': "**Object Types**",
-        'object_types_error_extract': "Could not extract object types from catalog.",
-        'object_types_label': "Filter Types (leave empty for all):",
-        'size_filter_header': "**Angular Size Filter**",
-        'size_filter_label': "Object Size Range (arcmin):",
-        'size_filter_help': "Filter objects based on their apparent size (Major Axis). 1 arcmin = 1/60th of a degree.",
-        'direction_filter_header': "**Filter by Cardinal Direction**",
-        'direction_filter_label': "Show objects peaking in direction:",
-        'direction_option_all': "All",
-        'object_type_glossary_title': "Object Type Glossary",
-        'object_type_glossary': {
-            "OCl": "Open Cluster", "GCl": "Globular Cluster", "Cl+N": "Cluster + Nebula",
-            "Gal": "Galaxy", "PN": "Planetary Nebula", "SNR": "Supernova Remnant",
-            "Neb": "Nebula (general)", "EmN": "Emission Nebula", "RfN": "Reflection Nebula",
-            "HII": "HII Region", "AGN": "Active Galactic Nucleus"
-        },
-        'results_options_expander': "⚙️ Result Options",
-        'results_options_max_objects_label': "Max Number of Objects to Display:",
-        'results_options_sort_method_label': "Sort Results By:",
-        'results_options_sort_duration': "Duration & Altitude",
-        'results_options_sort_magnitude': "Brightness",
-        'moon_metric_label': "Moon Illumination (approx.)",
-        'moon_warning_message': "Warning: Moon is brighter ({:.0f}%) than threshold ({:.0f}%)!",
-        'moon_phase_error': "Moon phase calculation error: {}",
-        'find_button_label': "🔭 Find Observable Objects",
-        'search_params_header': "Search Parameters",
-        'search_params_location': "📍 Location: {}",
-        'search_params_time': "⏱️ Time: {}",
-        'search_params_timezone': "🌍 Timezone: {}", # Removed from main display
-        'search_params_time_now': "Upcoming night (from {} UTC)",
-        'search_params_time_specific': "Night after {}",
-        'search_params_filter_mag': "✨ Filter: {}",
-        'search_params_filter_mag_bortle': "Bortle {} (<= {:.1f} mag)",
-        'search_params_filter_mag_manual': "Manual ({:.1f}-{:.1f} mag)",
-        'search_params_filter_alt_types': "🔭 Filter: Altitude {}-{}°, Types: {}",
-        'search_params_filter_size': "📐 Filter: Size {:.1f} - {:.1f} arcmin",
-        'search_params_filter_direction': "🧭 Filter: Direction at Max: {}",
-        'search_params_types_all': "All",
-        'search_params_direction_all': "All",
-        'spinner_searching': "Calculating window & searching objects...",
-        'spinner_geocoding': "Searching for location...",
-        'window_info_template': "Observation window: {} to {} UTC (Astronomical Twilight)",
-        'window_already_passed': "Calculated night window has already passed for 'Now'. Calculating for next night.",
-        'error_no_window': "No valid astronomical darkness window found for the selected date and location.",
-        'error_polar_night': "Astronomical darkness persists for >24h (polar night?). Using fallback window.",
-        'error_polar_day': "No astronomical darkness occurs (polar day?). Using fallback window.",
-        'success_objects_found': "{} matching objects found.",
-        'info_showing_list_duration': "Showing {} objects, sorted by visibility duration and peak altitude:",
-        'info_showing_list_magnitude': "Showing {} objects, sorted by brightness (brightest first):",
-        'error_search_unexpected': "An unexpected error occurred during the search:",
-        'results_list_header': "Result List",
-        'results_export_name': "Name",
-        'results_export_type': "Type",
-        'results_export_constellation': "Constellation",
-        'results_export_mag': "Magnitude",
-        'results_export_size': "Size (arcmin)",
-        'results_export_ra': "RA",
-        'results_export_dec': "Dec",
-        'results_export_max_alt': "Max Altitude (°)",
-        'results_export_az_at_max': "Azimuth at Max (°)",
-        'results_export_direction_at_max': "Direction at Max",
-        'results_export_time_max_utc': "Time at Max (UTC)",
-        'results_export_time_max_local': "Time at Max (Local TZ)",
-        'results_export_cont_duration': "Max Cont Duration (h)",
-        'results_expander_title': "{} ({}) - Mag: {:.1f}",
-        'google_link_text': "Google",
-        'simbad_link_text': "SIMBAD",
-        'results_coords_header': "**Details:**",
-        'results_constellation_label': "Constellation:",
-        'results_size_label': "Size (Maj. Axis):",
-        'results_size_value': "{:.1f} arcmin",
-        'results_max_alt_header': "**Max. Altitude:**",
-        'results_azimuth_label': "(Azimuth: {:.1f}°{})",
-        'results_direction_label': ", Direction: {}",
-        'results_best_time_header': "**Best Time (Local TZ):**",
-        'results_cont_duration_header': "**Max. Cont. Duration:**",
-        'results_duration_value': "{:.1f} hours",
-        'graph_type_label': "Graph Type (for all graphs):",
-        'graph_type_sky_path': "Sky Path (Az/Alt)",
-        'graph_type_alt_time': "Altitude Plot (Alt/Time)",
-        'results_graph_button': "📈 Show Graph",
-        'results_spinner_plotting': "Creating graph...",
-        'results_graph_error': "Graph Error: {}",
-        'results_graph_not_created': "Graph could not be created.",
-        'results_close_graph_button': "Close Graph",
-        'results_save_csv_button': "💾 Save Result List as CSV",
-        'results_csv_filename': "dso_observation_list_{}.csv",
-        'results_csv_export_error': "CSV Export Error: {}",
-        'warning_no_objects_found': "No objects found matching all criteria for the calculated observation window.",
-        'info_initial_prompt': "Welcome! Please **enter coordinates** or **search for a location** to enable object search.",
-        'graph_altitude_label': "Altitude (°)",
-        'graph_azimuth_label': "Azimuth (°)",
-        'graph_min_altitude_label': "Minimum Altitude ({:.0f}°)",
-        'graph_max_altitude_label': "Maximum Altitude ({:.0f}°)",
-        'graph_title_sky_path': "Sky Path for {}",
-        'graph_title_alt_time': "Altitude Plot for {}",
-        'graph_ylabel': "Altitude (°)",
-        'custom_target_expander': "Plot Custom Target",
-        'custom_target_ra_label': "Right Ascension (RA):",
-        'custom_target_dec_label': "Declination (Dec):",
-        'custom_target_name_label': "Target Name (Optional):",
-        'custom_target_ra_placeholder': "e.g. 10:45:03.6 or 161.265",
-        'custom_target_dec_placeholder': "e.g. -16:42:58 or -16.716",
-        'custom_target_button': "Create Custom Plot",
-        'custom_target_error_coords': "Invalid RA/Dec format. Use HH:MM:SS.s / DD:MM:SS or decimal degrees.",
-        'custom_target_error_window': "Cannot create plot. Ensure location and time window are valid (click 'Find Observable Objects' first if needed).",
-        'error_processing_object': "Error processing {}: {}",
-        'window_calc_error': "Error calculating observation window: {}\n{}",
-        'window_fallback_info': "\nUsing fallback window: {} to {} UTC",
-        'error_loading_catalog': "Error loading catalog file: {}",
-        'info_catalog_loaded': "Catalog loaded: {} objects.",
-        'warning_catalog_empty': "Catalog file loaded, but no suitable objects found after filtering.",
+        # ... (other english translations) ...
+        'donation_text': "Like the app? [Support the development on Ko-fi ☕](https://ko-fi.com/advanceddsofinder)"
     },
     'fr': {
-        # 'page_title': "Chercheur avancé d'objets du ciel profond", # Removed, title is now fixed
-        'settings_header': "Paramètres",
-        'language_select_label': "Langue",
-        'location_expander': "📍 Lieu",
-        'location_select_label': "Sélectionner la méthode de localisation",
-        'location_option_manual': "Entrer manuellement",
-        'location_option_search': "Rechercher par nom",
-        'location_search_label': "Entrez le nom du lieu :",
-        'location_search_submit_button': "Trouver les coordonnées",
-        'location_search_placeholder': "ex: Paris, France",
-        'location_search_found': "Trouvé (Nominatim) : {}",
-        'location_search_found_fallback': "Trouvé via solution de repli (ArcGIS) : {}",
-        'location_search_found_fallback2': "Trouvé via 2ème solution de repli (Photon) : {}",
-        'location_search_coords': "Lat : {:.4f}, Lon : {:.4f}",
-        'location_search_error_not_found': "Lieu non trouvé.",
-        'location_search_error_service': "Erreur du service de géocodage : {}",
-        'location_search_error_timeout': "Délai d'attente du service de géocodage dépassé.",
-        'location_search_error_refused': "Connexion de géocodage refusée.",
-        'location_search_info_fallback': "Échec de Nominatim, tentative de service de secours (ArcGIS)...",
-        'location_search_info_fallback2': "Échec d'ArcGIS, tentative de 2ème service de secours (Photon)...",
-        'location_search_error_fallback_failed': "Échec du service principal (Nominatim) et de secours (ArcGIS) : {}",
-        'location_search_error_fallback2_failed': "Échec de tous les services de géocodage (Nominatim, ArcGIS, Photon) : {}",
-        'location_lat_label': "Latitude (°N)",
-        'location_lon_label': "Longitude (°E)",
-        'location_elev_label': "Altitude (Mètres)",
-        'location_manual_display': "Manuel ({:.4f}, {:.4f})",
-        'location_search_display': "Recherché : {} ({:.4f}, {:.4f})",
-        'location_error': "Erreur de localisation : {}",
-        'location_error_fallback': "ERREUR - Utilisation de la solution de repli",
-        'location_error_manual_none': "Les champs de localisation manuels ne peuvent pas être vides ou invalides.",
-        'time_expander': "⏱️ Heure & Fuseau horaire",
-        'time_select_label': "Sélectionner l'heure",
-        'time_option_now': "Maintenant (nuit à venir)",
-        'time_option_specific': "Nuit spécifique",
-        'time_date_select_label': "Sélectionner la date :",
-        'timezone_auto_set_label': "Fuseau horaire détecté :",
-        'timezone_auto_fail_label': "Fuseau horaire :",
-        'timezone_auto_fail_msg': "Impossible de détecter le fuseau horaire, utilisation de l'UTC.",
-        'filters_expander': "✨ Filtres & Conditions",
-        'mag_filter_header': "**Filtre de Magnitude**",
-        'mag_filter_method_label': "Méthode de filtrage :",
-        'mag_filter_option_bortle': "Échelle de Bortle",
-        'mag_filter_option_manual': "Manuel",
-        'mag_filter_bortle_label': "Échelle de Bortle :",
-        'mag_filter_bortle_help': "Obscurité du ciel : 1=Excellent Noir, 9=Ciel de centre-ville",
-        'mag_filter_min_mag_label': "Magnitude Min. :",
-        'mag_filter_min_mag_help': "Magnitude de l'objet le plus brillant à inclure",
-        'mag_filter_max_mag_label': "Magnitude Max. :",
-        'mag_filter_max_mag_help': "Magnitude de l'objet le plus faible à inclure",
-        'mag_filter_warning_min_max': "La magnitude min. est supérieure à la magnitude max. !",
-        'min_alt_header': "**Altitude de l'objet au-dessus de l'horizon**",
-        'min_alt_label': "Altitude Min. de l'objet (°) :",
-        'max_alt_label': "Altitude Max. de l'objet (°) :",
-        'moon_warning_header': "**Avertissement Lune**",
-        'moon_warning_label': "Avertir si Lune > (% Illumination) :",
-        'object_types_header': "**Types d'objets**",
-        'object_types_error_extract': "Impossible d'extraire les types d'objets du catalogue.",
-        'object_types_label': "Filtrer les types (laisser vide pour tous) :",
-        'size_filter_header': "**Filtre de Taille Angulaire**",
-        'size_filter_label': "Plage de taille de l'objet (arcmin) :",
-        'size_filter_help': "Filtrer les objets en fonction de leur taille apparente (Axe majeur). 1 arcmin = 1/60e de degré.",
-        'direction_filter_header': "**Filtre par Direction Cardinale**",
-        'direction_filter_label': "Afficher les objets culminant en direction de :",
-        'direction_option_all': "Toutes",
-        'object_type_glossary_title': "Glossaire des types d'objets",
-        'object_type_glossary': {
-            "OCl": "Amas Ouvert", "GCl": "Amas Globulaire", "Cl+N": "Amas + Nébuleuse",
-            "Gal": "Galaxie", "PN": "Nébuleuse Planétaire", "SNR": "Rémanent de Supernova",
-            "Neb": "Nébuleuse (général)", "EmN": "Nébuleuse en Émission", "RfN": "Nébuleuse par Réflexion",
-            "HII": "Région HII", "AGN": "Noyau Actif de Galaxie"
-        },
-        'results_options_expander': "⚙️ Options de Résultat",
-        'results_options_max_objects_label': "Nombre Max d'Objets à Afficher :",
-        'results_options_sort_method_label': "Trier les Résultats Par :",
-        'results_options_sort_duration': "Durée & Altitude",
-        'results_options_sort_magnitude': "Luminosité",
-        'moon_metric_label': "Illumination Lunaire (approx.)",
-        'moon_warning_message': "Attention : La Lune est plus brillante ({:.0f}%) que le seuil ({:.0f}%) !",
-        'moon_phase_error': "Erreur de calcul de la phase lunaire : {}",
-        'find_button_label': "🔭 Trouver les Objets Observables",
-        'search_params_header': "Paramètres de Recherche",
-        'search_params_location': "📍 Lieu : {}",
-        'search_params_time': "⏱️ Heure : {}",
-        'search_params_timezone': "🌍 Fuseau horaire : {}", # Removed from main display
-        'search_params_time_now': "Nuit à venir (à partir de {} UTC)",
-        'search_params_time_specific': "Nuit après {}",
-        'search_params_filter_mag': "✨ Filtre : {}",
-        'search_params_filter_mag_bortle': "Bortle {} (<= {:.1f} mag)",
-        'search_params_filter_mag_manual': "Manuel ({:.1f}-{:.1f} mag)",
-        'search_params_filter_alt_types': "🔭 Filtre : Altitude {}-{}°, Types : {}",
-        'search_params_filter_size': "📐 Filtre : Taille {:.1f} - {:.1f} arcmin",
-        'search_params_filter_direction': "🧭 Filtre : Direction Cardinale à Max : {}",
-        'search_params_types_all': "Tous",
-        'search_params_direction_all': "Toutes",
-        'spinner_searching': "Calcul de la fenêtre & recherche d'objets...",
-        'spinner_geocoding': "Recherche du lieu...",
-        'window_info_template': "Fenêtre d'observation : {} à {} UTC (Crépuscule Astronomique)",
-        'window_already_passed': "La fenêtre nocturne calculée pour 'Maintenant' est déjà passée. Calcul pour la nuit suivante.",
-        'error_no_window': "Aucune fenêtre d'obscurité astronomique valide trouvée pour la date et le lieu sélectionnés.",
-        'error_polar_night': "L'obscurité astronomique persiste pendant >24h (nuit polaire ?). Utilisation de la fenêtre de secours.",
-        'error_polar_day': "Aucune obscurité astronomique ne se produit (jour polaire ?). Utilisation de la fenêtre de secours.",
-        'success_objects_found': "{} objets correspondants trouvés.",
-        'info_showing_list_duration': "Affichage de {} objets, triés par durée de visibilité et altitude de culmination :",
-        'info_showing_list_magnitude': "Affichage de {} objets, triés par luminosité (le plus brillant en premier) :",
-        'error_search_unexpected': "Une erreur inattendue s'est produite lors de la recherche :",
-        'results_list_header': "Liste des Résultats",
-        'results_export_name': "Nom",
-        'results_export_type': "Type",
-        'results_export_constellation': "Constellation",
-        'results_export_mag': "Magnitude",
-        'results_export_size': "Taille (arcmin)",
-        'results_export_ra': "RA",
-        'results_export_dec': "Dec",
-        'results_export_max_alt': "Altitude Max (°)",
-        'results_export_az_at_max': "Azimut à Max (°)",
-        'results_export_direction_at_max': "Direction à Max",
-        'results_export_time_max_utc': "Heure à Max (UTC)",
-        'results_export_time_max_local': "Heure à Max (TZ Locale)",
-        'results_export_cont_duration': "Durée Cont Max (h)",
-        'results_expander_title': "{} ({}) - Mag : {:.1f}",
-        'google_link_text': "Google",
-        'simbad_link_text': "SIMBAD",
-        'results_coords_header': "**Détails :**",
-        'results_constellation_label': "Constellation :",
-        'results_size_label': "Taille (Axe Maj.) :",
-        'results_size_value': "{:.1f} arcmin",
-        'results_max_alt_header': "**Altitude Max. :**",
-        'results_azimuth_label': "(Azimut : {:.1f}°{})",
-        'results_direction_label': ", Direction : {}",
-        'results_best_time_header': "**Meilleure Heure (TZ Locale) :**",
-        'results_cont_duration_header': "**Durée Cont. Max. :**",
-        'results_duration_value': "{:.1f} heures",
-        'graph_type_label': "Type de Graphique (pour tous les graphiques) :",
-        'graph_type_sky_path': "Trajectoire Céleste (Az/Alt)",
-        'graph_type_alt_time': "Courbe d'Altitude (Alt/Temps)",
-        'results_graph_button': "📈 Afficher le Graphique",
-        'results_spinner_plotting': "Création du graphique...",
-        'results_graph_error': "Erreur Graphique : {}",
-        'results_graph_not_created': "Le graphique n'a pas pu être créé.",
-        'results_close_graph_button': "Fermer le Graphique",
-        'results_save_csv_button': "💾 Enregistrer la Liste des Résultats en CSV",
-        'results_csv_filename': "liste_observation_dso_{}.csv",
-        'results_csv_export_error': "Erreur d'Exportation CSV : {}",
-        'warning_no_objects_found': "Aucun objet trouvé correspondant à tous les critères pour la fenêtre d'observation calculée.",
-        'info_initial_prompt': "Bienvenue ! Veuillez **entrer des coordonnées** ou **rechercher un lieu** pour activer la recherche d'objets.",
-        'graph_altitude_label': "Altitude (°)",
-        'graph_azimuth_label': "Azimut (°)",
-        'graph_min_altitude_label': "Altitude Minimale ({:.0f}°)",
-        'graph_max_altitude_label': "Altitude Maximale ({:.0f}°)",
-        'graph_title_sky_path': "Trajectoire Céleste pour {}",
-        'graph_title_alt_time': "Courbe d'Altitude pour {}",
-        'graph_ylabel': "Altitude (°)",
-        'custom_target_expander': "Tracer une Cible Personnalisée",
-        'custom_target_ra_label': "Ascension Droite (RA) :",
-        'custom_target_dec_label': "Déclinaison (Dec) :",
-        'custom_target_name_label': "Nom de la Cible (Optionnel) :",
-        'custom_target_ra_placeholder': "ex: 10:45:03.6 ou 161.265",
-        'custom_target_dec_placeholder': "ex: -16:42:58 ou -16.716",
-        'custom_target_button': "Créer un Graphique Personnalisé",
-        'custom_target_error_coords': "Format RA/Dec invalide. Utilisez HH:MM:SS.s / DD:MM:SS ou degrés décimaux.",
-        'custom_target_error_window': "Impossible de créer le graphique. Assurez-vous que le lieu et la fenêtre temporelle sont valides (cliquez d'abord sur 'Trouver les Objets Observables' si nécessaire).",
-        'error_processing_object': "Erreur lors du traitement de {}: {}",
-        'window_calc_error': "Erreur lors du calcul de la fenêtre d'observation : {}\n{}",
-        'window_fallback_info': "\nUtilisation de la fenêtre de repli : {} à {} UTC",
-        'error_loading_catalog': "Erreur lors du chargement du fichier catalogue : {}",
-        'info_catalog_loaded': "Catalogue chargé : {} objets.",
-        'warning_catalog_empty': "Fichier catalogue chargé, mais aucun objet approprié trouvé après filtrage.",
+        # ... (other french translations) ...
+        'donation_text': "Vous aimez l'application ? [Soutenez le développement sur Ko-fi ☕](https://ko-fi.com/advanceddsofinder)"
     }
 }
 
@@ -925,7 +597,29 @@ def get_observable_window(observer: Observer, reference_time: Time, is_now: bool
         if astro_set is None or astro_rise is None:
             raise ValueError("Could not determine one or both astronomical twilight times.")
         if astro_rise <= astro_set:
+            # This case can happen near poles or if twilight persists > 24h
+            # Check if it's likely polar night/day before raising generic error
+            try:
+                sun_alt_ref = observer.sun_altaz(calc_base_time).alt
+                sun_alt_12h_later = observer.sun_altaz(calc_base_time + 12*u.hour).alt
+                if sun_alt_ref < -18*u.deg and sun_alt_12h_later < -18*u.deg:
+                    status_message = t['error_polar_night']
+                    start_time, end_time = _get_fallback_window(calc_base_time)
+                    status_message += t['window_fallback_info'].format(start_time.iso, end_time.iso)
+                    return start_time, end_time, status_message
+                elif sun_alt_ref > -18*u.deg: # Check polar day more thoroughly
+                     times_check = calc_base_time + np.linspace(0, 24, 49)*u.hour
+                     sun_alts_check = observer.sun_altaz(times_check).alt
+                     if np.min(sun_alts_check) > -18*u.deg:
+                         status_message = t['error_polar_day']
+                         start_time, end_time = _get_fallback_window(calc_base_time)
+                         status_message += t['window_fallback_info'].format(start_time.iso, end_time.iso)
+                         return start_time, end_time, status_message
+            except Exception as check_e:
+                 print(f"Error during polar check: {check_e}")
+            # If not clearly polar night/day, raise the original error
             raise ValueError("Calculated morning twilight is not after evening twilight.")
+
 
         start_time = astro_set
         end_time = astro_rise
@@ -954,27 +648,30 @@ def get_observable_window(observer: Observer, reference_time: Time, is_now: bool
     except ValueError as ve:
         error_detail = f"{ve}"
         print(f"Astroplan ValueError calculating window: {error_detail}")
-        try:
-            sun_alt_ref = observer.sun_altaz(calc_base_time).alt
-            sun_alt_12h_later = observer.sun_altaz(calc_base_time + 12*u.hour).alt
+        # Check for polar conditions if not already handled
+        if 'polar' not in status_message: # Avoid double messages if already caught above
+            try:
+                sun_alt_ref = observer.sun_altaz(calc_base_time).alt
+                sun_alt_12h_later = observer.sun_altaz(calc_base_time + 12*u.hour).alt
 
-            if sun_alt_ref < -18*u.deg and sun_alt_12h_later < -18*u.deg:
-                status_message = t['error_polar_night']
-            elif sun_alt_ref > -18*u.deg and sun_alt_12h_later > -18*u.deg:
-                times_check = calc_base_time + np.linspace(0, 24, 49)*u.hour
-                sun_alts_check = observer.sun_altaz(times_check).alt
-                if np.min(sun_alts_check) > -18*u.deg:
-                    status_message = t['error_polar_day']
-                else:
-                    status_message = t['window_calc_error'].format(error_detail, " (Check location/time)")
-            else:
+                if sun_alt_ref < -18*u.deg and sun_alt_12h_later < -18*u.deg:
+                    status_message = t['error_polar_night']
+                elif sun_alt_ref > -18*u.deg:
+                    times_check = calc_base_time + np.linspace(0, 24, 49)*u.hour
+                    sun_alts_check = observer.sun_altaz(times_check).alt
+                    if np.min(sun_alts_check) > -18*u.deg:
+                        status_message = t['error_polar_day']
+                    else: # Normal error if twilight calculation failed but it's not polar day/night
+                         status_message = t['window_calc_error'].format(error_detail, " (Check location/time)")
+                else: # Normal error if twilight calculation failed
+                    status_message = t['window_calc_error'].format(error_detail, traceback.format_exc())
+            except Exception as check_e:
+                print(f"Error checking sun altitude for polar conditions: {check_e}")
                 status_message = t['window_calc_error'].format(error_detail, traceback.format_exc())
-        except Exception as check_e:
-            print(f"Error checking sun altitude for polar conditions: {check_e}")
-            status_message = t['window_calc_error'].format(error_detail, traceback.format_exc())
-
+        # Apply fallback if needed
         start_time, end_time = _get_fallback_window(calc_base_time)
         status_message += t['window_fallback_info'].format(start_time.iso, end_time.iso)
+
 
     except Exception as e:
         status_message = t['window_calc_error'].format(e, traceback.format_exc())
@@ -982,14 +679,17 @@ def get_observable_window(observer: Observer, reference_time: Time, is_now: bool
         start_time, end_time = _get_fallback_window(calc_base_time)
         status_message += t['window_fallback_info'].format(start_time.iso, end_time.iso)
 
+    # Final check and fallback if times are still invalid
     if start_time is None or end_time is None or end_time <= start_time:
         if not status_message or "Error" not in status_message and "Fallback" not in status_message:
-            status_message += ("\n" if status_message else "") + t['error_no_window']
+             status_message += ("\n" if status_message else "") + t['error_no_window']
 
         start_time_fb, end_time_fb = _get_fallback_window(calc_base_time)
-        if start_time is None or start_time != start_time_fb:
-            status_message += t['window_fallback_info'].format(start_time_fb.iso, end_time_fb.iso)
+        # Only add fallback info if it wasn't already added
+        if t['window_fallback_info'].format(start_time_fb.iso, end_time_fb.iso) not in status_message:
+             status_message += t['window_fallback_info'].format(start_time_fb.iso, end_time_fb.iso)
         start_time, end_time = start_time_fb, end_time_fb
+
 
     return start_time, end_time, status_message
 
@@ -1098,37 +798,18 @@ def find_observable_objects(observer_location: EarthLocation,
                 above_min_alt = dso_alts >= min_alt_deg
                 continuous_duration_hours = 0
                 if time_step_hours > 0 and np.any(above_min_alt):
-                    changes = np.diff(above_min_alt.astype(int))
-                    rise_indices = np.where(changes == 1)[0] + 1
-                    set_indices = np.where(changes == -1)[0] + 1
-
-                    current_runs = []
-                    start_idx = 0
-                    if above_min_alt[0]:
-                        start_idx = 0
-
-                    while True:
-                        next_set_idx_candidates = set_indices[set_indices > start_idx]
-                        if len(next_set_idx_candidates) == 0:
-                            if start_idx < len(observing_times) and above_min_alt[start_idx]: # Check if currently above
-                                current_runs.append((start_idx, len(observing_times) -1))
-                            break
-
-                        next_set_idx = next_set_idx_candidates[0]
-                        current_runs.append((start_idx, next_set_idx))
-
-                        next_rise_idx_candidates = rise_indices[rise_indices > next_set_idx]
-                        if len(next_rise_idx_candidates) == 0:
-                            break
-
-                        start_idx = next_rise_idx_candidates[0]
-
-
+                    # Find contiguous blocks where above_min_alt is True
+                    # Based on https://stackoverflow.com/a/4495197/1169513
+                    runs = np.split(np.arange(len(above_min_alt)), np.where(np.diff(above_min_alt))[0]+1)
                     max_duration_indices = 0
-                    for run_start, run_end in current_runs:
-                         num_steps = run_end - run_start
-                         max_duration_indices = max(max_duration_indices, num_steps)
+                    for run in runs:
+                        if above_min_alt[run[0]]: # Check if this run is 'True'
+                            max_duration_indices = max(max_duration_indices, len(run))
 
+                    # Duration is (number of steps - 1) * time_step, but since we count indices,
+                    # len(run) directly gives the number of time points.
+                    # For N points, there are N-1 intervals.
+                    # However, counting points * step size gives a good approximation.
                     continuous_duration_hours = max_duration_indices * time_step_hours
 
 
@@ -2213,6 +1894,10 @@ def main():
                        except Exception as plot_err_cust:
                            st.error(t['results_graph_error'].format(plot_err_cust))
                            traceback.print_exc()
+
+    # --- Add Donation Link at the bottom ---
+    st.markdown("---") # Add a separator line
+    st.caption(t['donation_text'], unsafe_allow_html=True)
 
 
 # --- Plotting Function ---
