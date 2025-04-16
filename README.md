@@ -1,3 +1,6 @@
+<img width="1920" alt="Main_Logo_transparent_schatten" src="https://github.com/user-attachments/assets/342ef375-8a81-442e-b993-86ffdf58ca4c" />
+
+
 # Advanced DSO Finder 🔭
 
 An interactive web tool for amateur astronomers to plan Deep Sky observations.
