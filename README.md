@@ -132,5 +132,5 @@ Email: debrun2005@gmail.com
 
 ## Support
 
-If you find this project helpful, consider supporting me via PayPal: https://www.paypal.com/ncp/payment/3NW2DLWYMSSJ4
+If you find this project helpful, consider supporting me via Ko-fi: https://ko-fi.com/advanceddsofinder
 Thank you!
